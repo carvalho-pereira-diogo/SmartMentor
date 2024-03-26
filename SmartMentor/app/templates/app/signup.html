@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en" class="no-js">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Sign Up - SmartMentor</title>
+    <meta name="description" content="A brief description of your Web App.">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/signup.css' %}">
+</head>
+<body>
+
+{% for message in messages %}
+<div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+    <strong>Message: </strong>{{ message }}
+    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+        <span aria-hidden="true">&times;</span>
+    </button>
+</div>
+{% endfor %}
+
+<div class="signup-container">
+    <section class="signup-form">
+        <h3>Sign Up</h3>
+        <form action="/signup/" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" placeholder="Create a username" required>
+            </div>
+            <div class="form-group">
+                <label for="fname">First Name</label>
+                <input type="text" name="fname" id="fname" placeholder="Your First Name" required>
+            </div>
+            <div class="form-group">
+                <label for="lname">Last Name</label>
+                <input type="text" name="lname" id="lname" placeholder="Your Last Name" required>
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" name="email" id="email" placeholder="Your Email Address" required>
+            </div>
+            <div class="form-group">
+                <label for="pass1">Password</label>
+                <input type="password" name="pass1" id="pass1" placeholder="Create a Password" required>
+            </div>
+            <div class="form-group">
+                <label for="pass2">Confirm Password</label>
+                <input type="password" name="pass2" id="pass2" placeholder="Confirm Password" required>
+            </div>
+            <div class="form-dec">
+                <label for="role">Role</label>
+                <select name="role" id="role" required>
+                    <option value="teacher">Teacher</option>  <!-- This option is now first -->
+                    <option value="student">Student</option>
+                </select>
+            </div>
+            <div class="form-dec hidden" id="level-selection">
+                <label for="level">Level of programming skills</label>
+                <select name="level" id="level">
+                    <option value="beginner">Beginner</option>
+                    <option value="intermediate">Intermediate</option>
+                    <option value="advanced">Advanced</option>
+                </select>
+            </div>
+            <button type="submit">Sign Up</button>
+        </form>
+    </section>
+</div>
+
+<script>
+    function toggleLevelSelection(role) {
+        const levelSelection = document.getElementById('level-selection');
+        if (role === 'student') {
+            levelSelection.removeAttribute('hidden');
+        } else {
+            levelSelection.setAttribute('hidden', '');
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const roleElement = document.getElementById('role');
+        toggleLevelSelection(roleElement.value);
+        roleElement.addEventListener('change', function() {
+            toggleLevelSelection(this.value);
+        });
+    });
+</script>
+
+</body>
+<footer>
+    <p>© 2024 SmartMentor. All rights reserved.</p>
+</footer>
+</html>

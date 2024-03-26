@@ -1,0 +1,101 @@
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: "Raleway", sans-serif;
+}
+
+body,
+html {
+    height: 100%;
+    line-height: 1.8;
+}
+
+
+/* Global container styles for padding and margin */
+
+.w3-container {
+    padding-top: 50px;
+    /* Adds space at the top of containers */
+    padding-bottom: 50px;
+    /* Adds space at the bottom of containers */
+}
+
+
+/* Flex container for centering the content */
+
+.about-section-content {
+    display: flex;
+    justify-content: space-around;
+    /* Distributes space around items */
+    flex-wrap: wrap;
+    /* Allows items to wrap */
+    margin-top: 20px;
+    /* Adds space at the top */
+    margin-bottom: 20px;
+    /* Adds space at the bottom */
+}
+
+
+/* Style for each feature block */
+
+.about-section .w3-quarter {
+    padding: 0 15px;
+    text-align: center;
+    /* Center text horizontally */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    /* Center content vertically */
+    align-items: center;
+    /* Center content horizontally */
+    min-height: 600px;
+    /* Sets a minimum height */
+}
+
+
+/* Adjustments for consistent spacing and centering */
+
+.about-section i,
+.about-section p {
+    margin-bottom: 1em;
+    /* Provides consistent spacing */
+}
+
+.about-section p {
+    text-align: center;
+    /* Ensures text is centered */
+    max-width: 100%;
+    /* Allows paragraph to fill the flex container */
+}
+
+
+/* Navbar adjustments for logo and menu items */
+
+.w3-bar .w3-button {
+    padding: 16px;
+    margin-left: 10px;
+    /* Adds space between navbar items */
+}
+
+
+/* Background styling */
+
+.bgimg-1 {
+    background-position: center;
+    background-size: cover;
+    background-image: url('../images/home_background.jpg');
+    /* Update as needed */
+    min-height: 100%;
+}
+
+footer {
+    background-color: #D52B1E;
+    color: #fff;
+    text-align: center;
+    padding: 10px 0;
+    /* Removes position: absolute and lets flexbox handle positioning */
+}

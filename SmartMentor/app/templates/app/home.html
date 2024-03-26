@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>SmartMentor</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="https://www.w3schools.com/w3css/4/w3.css" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css?family=Raleway"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css"
+    />
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/home.css' %}" />
+  </head>
+  <body>
+    <!-- Navbar (sit on top) -->
+    <div class="w3-top">
+      <div class="w3-bar w3-white w3-card" id="myNavbar">
+        <a href="#home" class="w3-bar-item w3-button w3-wide">SmartMentor</a>
+        <!-- Right-sided navbar links -->
+        <div class="w3-right w3-hide-small">
+          <a href="#about" class="w3-bar-item w3-button">ABOUT</a>
+          <a href="#contact" class="w3-bar-item w3-button"
+            ><i class="fa fa-envelope"></i> CONTACT</a
+          >
+          {% if user.is_authenticated %}
+          <a href="/signout" class="w3-bar-item w3-button"
+            ><i class="fa fa-user"></i> SIGN OUT</a
+          >
+          {% else %}
+          <a href="/signup" class="w3-bar-item w3-button"
+            ><i class="fa fa-th"></i> JOIN US</a
+          >
+          <a href="/signin" class="w3-bar-item w3-button"
+            ><i class="fa fa-user"></i> SIGN IN</a
+          >
+          {% endif %}
+        </div>
+        <!-- Hide right-floated links on small screens and replace them with a menu icon -->
+
+        <a
+          href="javascript:void(0)"
+          class="w3-bar-item w3-button w3-right w3-hide-large w3-hide-medium"
+          onclick="w3_open()"
+        >
+          <i class="fa fa-bars"></i>
+        </a>
+      </div>
+    </div>
+
+    <!-- Sidebar on small screens when clicking the menu icon -->
+    <nav
+      class="w3-sidebar w3-bar-block w3-black w3-card w3-animate-left w3-hide-medium w3-hide-large"
+      style="display: none"
+      id="mySidebar"
+    >
+      <a
+        href="javascript:void(0)"
+        onclick="w3_close()"
+        class="w3-bar-item w3-button w3-large w3-padding-16"
+        >Close ×</a
+      >
+      <a href="#about" onclick="w3_close()" class="w3-bar-item w3-button"
+        >ABOUT</a
+      >
+      <a href="#team" onclick="w3_close()" class="w3-bar-item w3-button"
+        >TEAM</a
+      >
+      <a href="#work" onclick="w3_close()" class="w3-bar-item w3-button"
+        >WORK</a
+      >
+      <a href="#pricing" onclick="w3_close()" class="w3-bar-item w3-button"
+        >PRICING</a
+      >
+      <a href="#contact" onclick="w3_close()" class="w3-bar-item w3-button"
+        >CONTACT</a
+      >
+    </nav>
+
+    <!-- Header with full-height image -->
+    <header class="bgimg-1 w3-display-container w3-grayscale-min" id="home">
+      <div class="w3-display-left w3-text-white" style="padding: 48px">
+        <span class="w3-jumbo w3-hide-small">Empower Your Learning Journey</span
+        ><br />
+        <span class="w3-xxlarge w3-hide-large w3-hide-medium"
+          >Empower Your Learning Journey</span
+        ><br />
+        <span class="w3-large"
+          >Unlock a personalized learning experience with AI-driven
+          insights.</span
+        >
+        <p>
+          {% if user.is_authenticated %}
+          <a
+            href="/dashboard"
+            class="w3-button w3-white w3-padding-large w3-large w3-margin-top w3-opacity w3-hover-opacity-off"
+            >Explore SmartMentor</a
+          >
+          {% else %}
+          <a
+            href="#about"
+            class="w3-button w3-white w3-padding-large w3-large w3-margin-top w3-opacity w3-hover-opacity-off"
+            >Discover How</a
+          >
+          {% endif %}
+        </p>
+      </div>
+    </header>
+
+    <!-- About Section -->
+    <div class="w3-container" style="padding: 128px 16px" id="about">
+      <h3 class="w3-center">ABOUT SMARTMENTOR</h3>
+      <p class="w3-center w3-large">
+        Explore the key features of our AI-Enhanced Learning Platform
+      </p>
+
+      <div class="about-section-content">
+        <div class="w3-quarter">
+          <i
+            class="fa fa-user-circle-o w3-margin-bottom w3-jumbo w3-center"
+          ></i>
+          <p class="w3-large">Personalized Learning Pathways</p>
+          <p>
+            Embrace a learning journey that understands you. Our platform goes
+            beyond traditional one-size-fits-all education models by harnessing
+            advanced AI to craft personalized pathways. Analyzing your unique
+            learning patterns, preferences, and performance, SmartMentor ensures
+            that every lesson, every challenge is attuned to your personal
+            educational narrative. Discover a learning adventure that evolves
+            with you, keeping you engaged and ensuring you achieve your fullest
+            potential.
+          </p>
+        </div>
+        <div class="w3-quarter">
+          <i
+            class="fa fa-graduation-cap w3-margin-bottom w3-jumbo w3-center"
+          ></i>
+          <p class="w3-large">AI Tutor</p>
+          <p>
+            Encounter the future of tutoring with SmartMentor's AI Tutor.
+            Available round the clock, our AI Tutor provides instantaneous,
+            personalized support for all your learning needs. From clarifying
+            doubts in real-time to offering in-depth explanations and
+            step-by-step guides for complex subjects, the AI Tutor adapts to
+            your level, pacing, and style, ensuring no query goes unanswered.
+            Transform your learning experience with an ever-present,
+            ever-patient, and ever-adaptive tutor.
+          </p>
+        </div>
+        <div class="w3-quarter">
+          <i class="fa fa-gamepad w3-margin-bottom w3-jumbo w3-center"></i>
+          <p class="w3-large">Interactive Learning Tools</p>
+          <p>
+            Dive into an immersive learning environment with SmartMentor's suite
+            of interactive tools. Our platform brings learning to life through
+            engaging quizzes, collaborative Q&A forums, and gamified challenges
+            that make education an adventure. Each interactive experience is
+            designed to reinforce your learning, provide instant feedback, and
+            cultivate a community of curiosity and growth. With SmartMentor,
+            every interaction is an opportunity to learn, share, and excel.
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contact Section -->
+    <div
+      class="w3-container w3-light-grey"
+      style="padding: 128px 16px"
+      id="contact"
+    >
+      <h3 class="w3-center">CONTACT</h3>
+      <p class="w3-center w3-large">
+        SmartMentor is there for you! Let me know what you need:
+      </p>
+      <div style="margin-top: 48px">
+        <p>
+          <i class="fa fa-map-marker fa-fw w3-xxlarge w3-margin-right"></i>
+          Luxembourg, Belval
+        </p>
+        <p>
+          <i class="fa fa-phone fa-fw w3-xxlarge w3-margin-right"></i> +352
+          671290500
+        </p>
+        <p>
+          <i class="fa fa-envelope fa-fw w3-xxlarge w3-margin-right"> </i>
+          smartmentor.uni.lu@gmail.com
+        </p>
+        <br />
+      </div>
+    </div>
+
+    <footer>
+      <p>Empowering Learners Worldwide - © 2024 SmartMentor</p>
+    </footer>
+
+    <script>
+      // Modal Image Gallery
+      function onClick(element) {
+        document.getElementById("img01").src = element.src;
+        document.getElementById("modal01").style.display = "block";
+        var captionText = document.getElementById("caption");
+        captionText.innerHTML = element.alt;
+      }
+
+      // Toggle between showing and hiding the sidebar when clicking the menu icon
+      var mySidebar = document.getElementById("mySidebar");
+
+      function w3_open() {
+        if (mySidebar.style.display === "block") {
+          mySidebar.style.display = "none";
+        } else {
+          mySidebar.style.display = "block";
+        }
+      }
+
+      // Close the sidebar with the close button
+      function w3_close() {
+        mySidebar.style.display = "none";
+      }
+    </script>
+  </body>
+</html>

@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Sign In - SmartMentor</title>
+    <meta name="description" content="Sign in to access your account.">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'css/signin.css' %}" />
+</head>
+<body>
+
+<div class="login-container"> <!-- Ensure class matches CSS -->
+    {% for message in messages %}
+    <div class="alert alert-{{ message.tags }} alert-dismissible" role="alert">
+        <strong>Message: </strong>{{ message }}
+        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    {% endfor %}
+
+    <section class="login-form">
+        <h3>Sign In</h3>
+        <form action="/signin/" method="POST">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" placeholder="Enter your Username" required>
+            </div>
+            <div class="form-group">
+                <label for="pass1">Password</label>
+                <input type="password" name="pass1" id="pass1" placeholder="Enter your Password" required>
+            </div>
+            <button type="submit">Sign In</button>
+        </form>
+    </section>
+</div>
+
+</body>
+<footer>
+    <p>© 2024 SmartMentor. All rights reserved.</p>
+</footer>
+</html>

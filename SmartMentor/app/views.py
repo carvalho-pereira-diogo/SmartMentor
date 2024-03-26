@@ -4,19 +4,59 @@ from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.db import transaction
+from django.views.generic import ListView, DetailView
 from .models import *
+from .forms import *
+from django.contrib.auth.decorators import login_required
+
+# Defome courses inside the home view T
+class CourseView(ListView):
+    model = Course
+    template_name = 'app/stu_course.html'
+    context_object_name = 'courses'
 
 
+def upload_course_pdf(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('course')
+        else:
+            form = CourseForm()
+        return render(request, 'app/upload_course.html', {'form': form})
+    
+@login_required
+def course_upload(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('course_list')  # Redirect to a URL where you list the courses
+    else:
+        form = CourseForm()
+    return render(request, 'app/course_upload.html', {'form': form})
+
+def course_list(request):
+    courses = Course.objects.all()  # Fetch all courses from the database
+    return render(request, 'app/te_courses.html', {'courses': courses})
+
+def course_upload(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST, request.FILES)
+        if form.is_valid():
+            form.save()
+            return redirect('course_list')  # Redirect to a new URL
+    else:
+        form = CourseForm()
+    return render(request, 'app/course_upload.html', {'form': form})
 
 # Create your views here.
 def home(request):
     return render(request, 'app/home.html')
 
-def dashboard(request):
-    return render(request, 'app/dashboard.html')
-
-def student(request):
-    return render(request, 'app/studentProfile.html')
+def stu_dashboard(request):
+    return render(request, 'app/stu_dashboard.html')
 
 def signup(request):
     if request.method == "POST":
@@ -95,3 +135,18 @@ def signin(request):
 def signout(request):
     logout(request)
     return redirect('home')
+
+def profile_view(request):
+    return render(request, 'profile.html')
+
+def courses_view(request):
+    return render(request, 'courses.html')
+
+def ai_tutor_view(request):
+    return render(request, 'aitutor.html')
+
+def quizzes_view(request):
+    return render(request, 'quizzes.html')
+
+def qa_view(request):
+    return render(request, 'qa.html')

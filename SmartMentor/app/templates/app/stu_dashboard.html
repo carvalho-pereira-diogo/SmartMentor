@@ -1,0 +1,35 @@
+{% load static %}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SmartMentor</title>
+    <link rel="stylesheet" href="{% static 'css/stu_dashboard.css' %}">
+</head>
+<body>
+{%if user.is_authenticated %}
+<div class="dashboard">
+    <div class="sidebar">
+        <h2>SmartMentor</h2>
+        <a href="/profile">Profile</a>
+        <a href="/course">Courses</a>
+        <a href="/aitutor">AI Tutor</a>
+        <a href="/quizzes">Quizzes</a>
+        <a href="/qa">Q&A</a></li>
+        <a href="/signout">Sign Out</a>
+    </div>
+    <div class="main-content">
+
+    </div>
+    
+</div>
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+{% endif %}
+
+<script src="{% static 'js/stu_dashboard.js' %}"></script>
+</body>
+</html>

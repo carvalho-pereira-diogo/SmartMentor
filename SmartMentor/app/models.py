@@ -34,9 +34,12 @@ class Student(models.Model):
         return self.profile.username
     
 class Course(models.Model):
-    name = models.CharField(max_length=50)
-    pdf = models.FileField(upload_to='courses/')
-    students = models.ManyToManyField(Student, through='LearningPath')
+    name = models.CharField(max_length=50, default='course')
+    pdf = models.FileField(upload_to='courses/', default='courses/default.pdf')
+    pdf_name = models.CharField(max_length=50, default='pdf')
+    students = models.ManyToManyField(Student, through='LearningPath', related_name='courses')
+    time_created = models.DateTimeField(auto_now_add=True, null=True)
+    Teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, null=True)
     
     def __str__(self):
         return self.name

@@ -133,3 +133,7 @@ MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
 # URL to access media files
 MEDIA_URL = '/media/'
+
+LOGIN_REDIRECT_URL = 'home'
+LOGOUT_REDIRECT_URL = 'home'
+

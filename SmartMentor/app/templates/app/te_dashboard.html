@@ -1,0 +1,68 @@
+{% extends "app/base.html" %}
+{% block title %}
+Teacher Dashboard
+{% endblock %}
+
+{% block content %}
+{% if user.is_authenticated %}
+{% if user.profile.role == 'teacher' %}
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">SmartMentor</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/teacher/profile">Profile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/teacher/course">Courses</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/teacher/quiz">Quizzes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/teacher/ai_tutor">Tutor</a>
+          </li>
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+              {% csrf_token %}
+              <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+          </li>
+      </div>
+    </div>
+  </nav>
+
+</br>
+</br>
+</br>
+<div class="container-xl">
+    <section>
+        <h2>Welcome to SmartMentor: Your Gateway to Engaging Education</h2>
+        <p>At SmartMentor, education transcends traditional boundaries, facilitated by our dedicated teachers who are the architects of your learning experience. With an emphasis on creating a dynamic and interactive environment, our teachers craft courses, mentor learners, and develop educational games that make learning not just informative, but also captivating.</p>
+
+        <h3>Meet the SmartMentor Educators:</h3>
+        <p>SmartMentor's educators are more than just teachers; they are innovators in the educational sphere. They play a pivotal role in nurturing and guiding students through their educational journey:</p>
+        <ul>
+            <li><strong>Course Creators:</strong> Our teachers design comprehensive courses that are both engaging and challenging, ensuring that each lesson is a stepping stone to greater knowledge and understanding.</li>
+            <li><strong>Personal Tutors:</strong> As tutors, they provide personalized attention, supporting learners' unique educational needs with patience and insight.</li>
+            <li><strong>Game Developers:</strong> By integrating gamified learning, our educators make education fun, developing games that reinforce concepts and skills in an interactive and enjoyable way.</li>
+        </ul>
+
+        <p>Join SmartMentor to experience an education that is curated by experts who believe in the power of personalized learning. Our teachers are not just imparting knowledge; they are inspiring change and fostering a lifelong passion for learning. Discover the SmartMentor difference, where education is a journey of continuous discovery, led by those who know it best.</p>
+    </section>
+</div>
+
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
+{% endif %}
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+{% endif %}
+
+
+{% endblock %}

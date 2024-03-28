@@ -1,0 +1,68 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Teacher Courses
+{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        {% if user.profile.role == 'teacher' %}
+            <nav class="navbar navbar-expand-lg bg-body-tertiary">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="/">SmartMentor</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'teacher_course' %}">Courses</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'teacher_quiz' %}">Quizzes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'teacher_ai_tutor' %}">Tutor</a>
+                            </li>
+                            <li class="nav-item">
+                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <br>
+
+            <div class="container-xl">
+                <section>
+                    <h4>Teacher Course Section</h4>
+                    <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
+                    <p>Here, you add different courses as a teacher</p>
+                </section>
+            </div>
+            <div class="container-xl">
+                <section>
+                    {% for course in object_list %}
+                        <div class="card">
+                            <div class="card-body">
+                                <h5 class="card-title">{{ course.title }}</h5>
+                                <p class="card-text">{{ course.description }}</p>
+                                <a href="{% url 'course_detail' course.id %}" class="btn btn-primary">View Course</a>
+                            </div>
+                        </div>
+                    {% endfor %}
+                </section>
+            </div>
+        {% else %}
+            <h1>Access Denied</h1>
+            <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
+        {% endif %}
+    {% endif %}
+{% endblock %}

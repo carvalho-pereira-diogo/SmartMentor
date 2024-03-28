@@ -28,14 +28,33 @@
             ><i class="fa fa-envelope"></i> CONTACT</a
           >
           {% if user.is_authenticated %}
-          <a href="/signout" class="w3-bar-item w3-button"
-            ><i class="fa fa-user"></i> SIGN OUT</a
-          >
+          <!-- Sign out form wrapped in a div for styling consistency -->
+          <div class="w3-bar-item" style="display: flex; align-items: center">
+            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+              {% csrf_token %}
+              <button
+                type="submit"
+                class="w3-button"
+                style="
+                  background: none;
+                  border: none;
+                  font: inherit;
+                  color: inherit;
+                  cursor: pointer;
+                  outline: inherit;
+                  vertical-align: middle;
+                  padding: 8px 16px;
+                "
+              >
+                <i class="fa fa-user"></i> SIGN OUT
+              </button>
+            </form>
+          </div>
           {% else %}
-          <a href="/signup" class="w3-bar-item w3-button"
+          <a href="{% url 'register' %}" class="w3-bar-item w3-button"
             ><i class="fa fa-th"></i> JOIN US</a
           >
-          <a href="/signin" class="w3-bar-item w3-button"
+          <a href="{% url 'login' %}" class="w3-bar-item w3-button"
             ><i class="fa fa-user"></i> SIGN IN</a
           >
           {% endif %}
@@ -67,18 +86,39 @@
       <a href="#about" onclick="w3_close()" class="w3-bar-item w3-button"
         >ABOUT</a
       >
-      <a href="#team" onclick="w3_close()" class="w3-bar-item w3-button"
-        >TEAM</a
-      >
-      <a href="#work" onclick="w3_close()" class="w3-bar-item w3-button"
-        >WORK</a
-      >
-      <a href="#pricing" onclick="w3_close()" class="w3-bar-item w3-button"
-        >PRICING</a
-      >
       <a href="#contact" onclick="w3_close()" class="w3-bar-item w3-button"
-        >CONTACT</a
+        >Contact</a
       >
+      {% if user.is_authenticated %}
+      <form action="{% url 'logout' %}" method="post" style="margin: 0">
+        {% csrf_token %}
+        <button
+          type="submit"
+          class="w3-button"
+          style="
+            background: none;
+            border: none;
+            font: inherit;
+            color: inherit;
+            cursor: pointer;
+            outline: inherit;
+            vertical-align: middle;
+            padding: 8px 16px;
+          "
+        >
+          <i class="fa fa-user"></i> SIGN OUT
+        </button>
+      {% else %}
+      <a href="{% url 'register' %}" onclick="w3_close()" class="w3-bar-item w3-button"
+      >Join US</a
+      >
+      <a href="{% url 'login' %}" onclick="w3_close()" class="w3-bar-item w3-button"
+      >Sign In</a
+      >
+      {% endif %}
+
+
+
     </nav>
 
     <!-- Header with full-height image -->
@@ -95,11 +135,11 @@
         >
         <p>
           {% if user.is_authenticated %}
-          <a
-            href="/dashboard"
-            class="w3-button w3-white w3-padding-large w3-large w3-margin-top w3-opacity w3-hover-opacity-off"
-            >Explore SmartMentor</a
-          >
+            {% if user.profile.role == 'teacher' %}
+              <a href="{% url 'teacher_dashboard' %}" class="w3-button w3-white w3-padding-large w3-large w3-margin-top w3-opacity w3-hover-opacity-off">Explore SmartMentor</a>
+            {% else %}
+              <a href="{% url 'student_dashboard' %}" class="w3-button w3-white w3-padding-large w3-large w3-margin-top w3-opacity w3-hover-opacity-off">Explore SmartMentor</a>
+            {% endif %}
           {% else %}
           <a
             href="#about"

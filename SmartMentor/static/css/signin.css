@@ -58,6 +58,98 @@ body {
     box-shadow: 0 0 0 2px rgba(0, 87, 184, 0.25);
 }
 
+.login-form {
+    text-align: center;
+    /* This centers the children text elements */
+}
+
+
+/* This will style your form groups specifically for username and password */
+
+.form-username,
+.form-password {
+    margin-bottom: 15px;
+    /* Space out form groups */
+}
+
+button {
+    display: block;
+    width: 95%;
+    padding: 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #0057B8;
+    color: white;
+    cursor: pointer;
+    font-size: 16px;
+    margin: 20px auto;
+    /* Center button and give some space around */
+}
+
+
+/* New styles for additional links */
+
+.additional-links {
+    margin-top: 20px;
+    /* Space between button and links */
+    /* No need to set text-align as it's inherited from .login-form */
+}
+
+
+/* Styles for individual links if necessary */
+
+.additional-links a {
+    color: #D52B1E;
+    /* Example link color */
+    text-decoration: none;
+    /* Removes underline */
+    padding: 5px;
+    /* Space around links */
+    border-radius: 5px;
+    /* Rounded corners for aesthetics */
+    transition: color 0.3s ease;
+    /* Smooth transition for hover effect */
+}
+
+.additional-links a:hover {
+    color: #B22222;
+    /* Darker shade on hover */
+}
+
+.links-container {
+    margin-top: 20px;
+    /* Add some space between the button and the links */
+}
+
+.additional-links {
+    margin-top: 20px;
+    /* Adjust the space between the Sign In button and the links as needed */
+    text-align: center;
+    /* This will center the links since .login-form has text-align: center */
+}
+
+.login-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+}
+
+.login-container a {
+    padding: 10px 20px;
+    background-color: #D52B1E;
+    /* Red */
+    color: #fff;
+    text-decoration: none;
+    border-radius: 5px;
+    transition: background-color 0.3s ease;
+}
+
+.login-container a:hover {
+    background-color: #B22222;
+    /* Darker red */
+}
+
 button {
     display: block;
     width: 95%;
@@ -89,11 +181,12 @@ footer {
     bottom: 0;
 }
 
-
-/* Adjustments for responsive design */
-
 @media (max-width: 768px) {
     .login-container {
         margin: 1rem;
+    }
+    /* Adjustments for smaller screens */
+    .login-form {
+        margin-top: 1rem;
     }
 }

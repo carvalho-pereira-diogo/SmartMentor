@@ -1,35 +1,110 @@
-{% load static %}
+{% extends "app/base.html" %}
+{% block title %}
+Student Dashboard
+{% endblock %}
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - SmartMentor</title>
-    <link rel="stylesheet" href="{% static 'css/stu_dashboard.css' %}">
-</head>
-<body>
-{%if user.is_authenticated %}
-<div class="dashboard">
-    <div class="sidebar">
-        <h2>SmartMentor</h2>
-        <a href="/profile">Profile</a>
-        <a href="/course">Courses</a>
-        <a href="/aitutor">AI Tutor</a>
-        <a href="/quizzes">Quizzes</a>
-        <a href="/qa">Q&A</a></li>
-        <a href="/signout">Sign Out</a>
+{% block content %}
+{% if user.is_authenticated %}
+{% if user.profile.role == 'student' %}
+<nav class="navbar navbar-expand-lg bg-body-tertiary">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="/">SmartMentor</a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarSupportedContent">
+        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+          <li class="nav-item">
+            <a class="nav-link" href="/student/profile">Profile</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/course">Courses</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/quiz">Quizzes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/ai_tutor">Tutor</a>
+          </li>
+          <li class="nav-item">
+            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+              {% csrf_token %}
+              <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+          </li>
+      </div>
     </div>
-    <div class="main-content">
+  </nav>
 
+</br>
+</br>
+</br>
+
+  <div class="container-xl">
+    <section>
+        <h2>Welcome to SmartMentor: Your Personalized Learning Companion</h2>
+        <p>SmartMentor redefines the educational landscape, offering a bespoke learning journey tailored to each individual’s needs. Built on the foundation of cutting-edge AI technology, SmartMentor provides an immersive, interactive learning experience that adapts in real-time to your unique learning style and pace.</p>
+        
+        <h3>Explore SmartMentor's Core Features:</h3>
+        <ul>
+            <li><strong>Personalized Profiles:</strong> Begin your journey with a personalized profile that adapts as you grow, keeping track of your learning progress, preferences, and achievements.</li>
+            <li><strong>Recent Activities Dashboard:</strong> Stay informed with a dynamic dashboard that highlights your recent learning activities, upcoming tasks, and personalized recommendations.</li>
+            <li><strong>Custom Learning Pathways:</strong> With AI-driven insights, SmartMentor crafts individualized learning pathways that evolve with you, ensuring content always challenges and engages.</li>
+            <li><strong>Interactive AI Tutor:</strong> Access 24/7 support from our AI Chat Tutor Assistant, ready to provide instant feedback, explanations, and assistance on a wide range of subjects.</li>
+            <li><strong>AI-Enhanced Content Generation:</strong> Dive into courses enriched with AI-generated content, from lecture notes to interactive quizzes, tailored to fit your learning objectives.</li>
+            <li><strong>Engaging Educational Games:</strong> Reinforce learning through play with AI-crafted games that adapt to your skill level, making learning enjoyable and effective.</li>
+        </ul>
+        
+        <p>SmartMentor isn’t just a platform; it’s a revolution in digital education. By integrating advanced AI technologies with a user-centric design, SmartMentor ensures a learning experience that is not only personalized but also profoundly impactful. Embark on your journey with SmartMentor and transform the way you learn, one interaction at a time.</p>
+    </section>
+  </div>
+
+</br>
+</br>
+</br>
+
+<div class="card text-center">
+    <div class="card-body">
+        <p class="card-text"><section>
+            <h2>Courses</h2>
+            <p>At SmartMentor, our courses are more than just lessons; they're pathways to mastering your interests and expanding your knowledge.<br>
+                Powered by AI, our course content is dynamically tailored to fit your learning pace, style, and goals.<br>
+                From foundational knowledge to advanced topics, discover a library of courses designed to engage, challenge, and inspire you.</p>
+        </section>
+        </p>
+        <a href="/student/course" class="btn btn-primary">Courses</a>
     </div>
-    
-</div>
+    <div class="card-body">
+        <p class="card-text"><section>
+            <h2>Your Personal AI Chat Tutor</h2>
+            <p>Imagine having a tutor that’s available anytime you need, ready to answer your questions, clarify doubts, and guide you through complex concepts.<br>
+                SmartMentor’s AI Chat Tutor is exactly that.<br>
+                Leveraging the latest in natural language processing, our virtual tutor provides personalized academic support across a wide range of subjects, making learning more accessible and effective.</p>
+        </section>
+        </p>
+        <a href="/student/ai_tutor" class="btn btn-primary">Tutor</a>
+    </div>
+    <div class="card-body">
+        <p class="card-text"><section>
+            <h2>Quizzes That Adapt to You</h2>
+            <p>Quizzes at SmartMentor aren't just assessments; they're learning tools designed to adapt to your understanding of the subject.<br>
+                 With each quiz, our AI evaluates your responses to tailor future questions, ensuring you're always challenged at just the right level.<br>
+                  It's a dynamic way to reinforce your learning, track your progress, and discover areas for improvement in real-time.</p>
+        </section>
+        </p>
+        <a href="/student/quiz" class="btn btn-primary">Quizzes</a>
+    </div>
+  </div>
+  <br>
+  <br>
+  <br>
+
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
+{% endif %}
 {% else %}
     <h1>Access Denied</h1>
     <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
 {% endif %}
 
-<script src="{% static 'js/stu_dashboard.js' %}"></script>
-</body>
-</html>
+{% endblock %}

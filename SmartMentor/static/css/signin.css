@@ -99,33 +99,42 @@ button {
 /* Styles for individual links if necessary */
 
 .additional-links a {
-    color: #D52B1E;
-    /* Example link color */
-    text-decoration: none;
-    /* Removes underline */
-    padding: 5px;
-    /* Space around links */
+    display: block;
+    /* Make the link a block to occupy its own line */
+    width: 90%;
+    /* Set a width to match other form elements */
+    margin: 10px auto;
+    /* Center the link and add space around */
+    padding: 10px;
+    /* Add padding to increase size */
     border-radius: 5px;
-    /* Rounded corners for aesthetics */
-    transition: color 0.3s ease;
+    /* Rounded corners for button-like appearance */
+    background-color: #D52B1E;
+    /* Red background for contrast */
+    color: #fff;
+    /* White text */
+    text-decoration: none;
+    /* Remove underline from link */
+    text-align: center;
+    /* Center text within the link */
+    transition: background-color 0.3s;
     /* Smooth transition for hover effect */
 }
 
+
+/* Hover effect for button-like links */
+
 .additional-links a:hover {
-    color: #B22222;
-    /* Darker shade on hover */
+    background-color: #B22222;
+    /* Darken color on hover */
 }
 
-.links-container {
-    margin-top: 20px;
-    /* Add some space between the button and the links */
-}
+
+/* Ensure additional-links container inherits the center alignment */
 
 .additional-links {
-    margin-top: 20px;
-    /* Adjust the space between the Sign In button and the links as needed */
     text-align: center;
-    /* This will center the links since .login-form has text-align: center */
+    /* Center align the container */
 }
 
 .login-container {

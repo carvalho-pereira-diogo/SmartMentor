@@ -36,14 +36,63 @@ Teacher Profile
       </div>
     </nav>
 
-        <br>
+    <br>
 
-        <div class="container-xl">
-          <section>
-              <h4>Teacher Profile</h4>
-              <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
-          </section>
+    <div class="container-xl">
+      <section>
+          <h4>Teacher Profile:</h4>
+          <p>Username: {{ user.profile.username }}</p>
+          <p>Name: {{ user.profile.fname}} {{ user.profile.lname }}</p>
+      </section>
+  </div>
+  <br>
+  <div class="container-xl">
+    <section>
+        <h4>Personal Information:</h4>
+        <p>First Name: {{ user.profile.fname }}</p>
+        <p>Last Name: {{ user.profile.lname }}</p>
+        <p>Email: {{ user.email }}</p>
+    
+    </section>
+</div>
+
+      <br>
+      <div class="container-xl">
+        <section>
+            <h4>Change Password:</h4>
+            <form action="{% url 'password_change' %}">
+              <a href="{% url 'password_change' %}" class="btn btn-primary">Change</a>
+         </form>
+        </section>
       </div>
+      <br>
+      <div class="container-xl">
+        <section>
+            <h4>Course List:</h4>
+            <!-- Check if courses are empty-->
+            {% if user.profile.student.courses %}
+              {% for course in user.profile.teacher.courses_list.all %}
+              <p>Course: {{ course.name }}</p>
+              <p>Progress: {{ course.progress }}</p>
+              {% endfor %}
+            {% else %}
+              <p>No courses taken</p>
+            {% endif %}
+        </section>
+    </div>
+  <br>
+    <div class="container-xl">
+      <section>
+          <h4>SmartMentor Statistics:</h4>
+          <p>Role: {{ user.profile.role }}</p>
+          <p>Created: {{ user.profile.date_created }}</p>
+          <p>
+      </section>
+  </div>
+
+</br>
+</br>
+</br>
 
 
     {% else %}

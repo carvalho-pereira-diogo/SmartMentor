@@ -15,6 +15,7 @@ from .models import *
 from .forms import *
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from django.core.management.base import BaseCommand
 
 # Defome courses inside the home view T
 
@@ -117,11 +118,14 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
     model = Teacher
     template_name = 'app/student_profile.html'
     
+    #Get the courses of the teacher
     def get_object(self):
         if hasattr(self.request.user, 'student'):
             return self.request.user.student
         else:
             return redirect('student_profile')
+        
+
     
 from django.shortcuts import redirect
 
@@ -181,18 +185,21 @@ class StudentTutorView(ListView):
 class TeacherCourseView(ListView):
     model = Course
     template_name = 'app/teacher_course.html'
+    context_object_name = 'object_list'
     
-    def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
-            return self.request.user.teacher.course_set.all()
-        else:
-            return Course.objects.none()  # Return an empty QuerySet
-        
     def get_object(self):
         if hasattr(self.request.user, 'teacher'):
             return self.request.user.teacher
         else:
-            return redirect('teacher_course')
+            return redirect('student_ai_tutor')
+            
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            queryset = self.request.user.teacher.courses.all()
+            print(queryset)  # Print the queryset to the console
+            return queryset
+        else:
+            return Course.objects.none()  # Return an empty QuerySet
     
 class StudentCourseView(ListView):
     model = Course

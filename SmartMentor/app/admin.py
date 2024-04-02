@@ -39,9 +39,7 @@ class CourseAdmin(admin.ModelAdmin):
 admin.site.register(Course, CourseAdmin)
 
 class LearningPathAdmin(admin.ModelAdmin):
-    list_display = ('student', 'course')
-
-    search_fields = ('student__profile__user__username', 'course__name')
+    list_display = ('student', 'course', 'teacher')
     
 admin.site.register(LearningPath, LearningPathAdmin)
 

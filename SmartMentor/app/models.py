@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
 
+#import views
+
 #Create me different models:
 # We have a model Profile where Student is an extension of Profile:
 # In Profile we have:
@@ -29,23 +31,37 @@ class Profile(models.Model):
 class Student(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     level = models.CharField(max_length=10, default='beginner')
-    
+    list_of_courses = models.ManyToManyField('Course', related_name='students', through='LearningPath')
+
     def __str__(self):
         return self.profile.username
     
 class Course(models.Model):
     name = models.CharField(max_length=50, default='course')
     name_tag = models.CharField(max_length=50, default='course')
+    progress = models.IntegerField(default=0)
     pdf = models.FileField(upload_to='courses/', null=True)
     time_created = models.DateTimeField(auto_now_add=True, null=True)
-    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, null=True)
-    
+    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, null=True, related_name='taught_courses')
+
     def __str__(self):
         return self.name
+    
+
+class Teacher(models.Model):
+    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    courses_list = models.ManyToManyField(Course, related_name='courses', through='LearningPath')
+    
+    def __str__(self):
+        return self.profile.username
+    
+def get_default_teacher():
+    return Teacher.objects.first().id
     
 class LearningPath(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=get_default_teacher) 
     
     def __str__(self):
         return f'{self.student.profile.username} - {self.course.name}'
@@ -63,10 +79,4 @@ class Tutor(models.Model):
     
     def __str__(self):
         return self.name
-    
-class Teacher(models.Model):
-    profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    
-    def __str__(self):
-        return self.profile.username
     

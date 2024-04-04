@@ -62,3 +62,9 @@ class QuizAdmin(admin.ModelAdmin):
     
 admin.site.register(Quiz, QuizAdmin)
 
+# PDFs uploaded by teachers
+class PDFAdmin(admin.ModelAdmin):
+    list_display = ('file', 'uploaded_by')
+
+    search_fields = ('file', 'uploaded_by')
+

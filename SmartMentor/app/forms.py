@@ -35,3 +35,6 @@ class TeacherForm(forms.ModelForm):
     class Meta:
         model = Teacher
         fields = '__all__'
+        
+class UploadFileForm(forms.Form):
+    file = forms.FileField()

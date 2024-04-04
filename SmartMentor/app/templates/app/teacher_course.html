@@ -47,26 +47,78 @@ Teacher Courses
                     <br>
                     <h4>Course List:</h4>
                     <!-- Check if courses are empty-->
-                    {% if user.profile.student.courses %}
-                      {% for course in user.profile.teacher.courses_list.all %}
-                      <p>Course: {{ course.name }}</p>
-                      <p>Progress: {{ course.progress }}</p>
-                      {% endfor %}
+                    {% if user.profile.teacher.courses %}
+                        {% for course in user.profile.teacher.courses_list.all %}
+                        <p>Course: <a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></p>
+                        <p>Progress: {{ course.progress }}</p>
+                        {% endfor %}
                     {% else %}
                       <p>No courses taken</p>
                     {% endif %}
                 </section>
             </div>
+            <br />
             <div class="container-xl">
                 <section>
-                    <h4>Upload New Course:</h4>
-                    <form method="post" enctype="multipart/form-data">
+                    <h4>PDF list:</h4>
+                    {% if user.teacher %}
+                        {% for pdf in user.teacher.pdfs.all %}
+                            <form method="post" action="{% url 'delete_pdf' pdf.id %}">
+                                {% csrf_token %}
+                                <p>PDF: <a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a>
+                                <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+                            </form>
+                        {% empty %}
+                            <p>No PDFs uploaded</p>
+                        {% endfor %}
+                    {% else %}
+                        <p>You must be a teacher to upload a file.</p>
+                    {% endif %}
+                </section>
+            </div>
+            <br />
+            <div class="container-xl">
+                <section>
+                    <h4>Upload PDF for creation of a course:</h4>
+                    <form method="post" action="{% url 'teacher_course' %}" enctype="multipart/form-data">
                         {% csrf_token %}
-                        {{ form.as_p }}
-                        <button type="submit">Upload</button>
+                        <label for="file">Choose a PDF file:</label>
+                        <br>
+                        <br>
+                        <input type="file" id="file" name="file" accept="application/pdf">
+                        <br>
+                        <br>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
                     </form>
                 </section>
             </div>
+            <br />
+            <div class="container-xl">
+                <section>
+                    <h4>Upload PDF for a course:</h4>
+                    <form method="post" action="{% url 'teacher_course' %}" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <label for="file">Choose a PDF file:</label>
+                        <br>
+                        <br>
+                        <input type="file" id="file" name="file" accept="application/pdf">
+                        <br>
+                        <br>
+                        <label for="course">Choose a course:</label>
+                        <br>
+                        <br>
+                        <select id="course" name="course">
+                            {% for course in user.profile.teacher.courses_list.all %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <br>
+                        <br>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
+                    </form>
+                </section>
+            </div>
+
         {% else %}
             <h1>Access Denied</h1>
             <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>

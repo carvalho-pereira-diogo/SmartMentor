@@ -1,5 +1,7 @@
-from django.shortcuts import render, redirect
-from django.http import Http404, HttpResponse
+import os
+from django.conf import settings
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -77,7 +79,7 @@ def signup(request):
                     student = Student(profile=profile, level=level)
                     student.save()
                 elif role.lower() == 'teacher':
-                    teacher = Teacher(profile=profile)
+                    teacher = Teacher(user=user, profile=profile)
                     teacher.save()
 
                 messages.success(request, "Your account has been created successfully!")
@@ -181,26 +183,45 @@ class StudentTutorView(ListView):
             return redirect('student_ai_tutor')
 
 # is this possible that 
-@method_decorator(login_required, name='dispatch')
-class TeacherCourseView(ListView):
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from .forms import UploadFileForm
+
+class TeacherCourseView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/teacher_course.html'
     context_object_name = 'object_list'
     
-    def get_object(self):
-        if hasattr(self.request.user, 'teacher'):
-            return self.request.user.teacher
+    def get(self, request, *args, **kwargs):
+        form = UploadFileForm()
+        if hasattr(request.user, 'teacher'):
+            pdfs = request.user.teacher.pdfs.all()
         else:
-            return redirect('student_ai_tutor')
-            
-    def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
-            queryset = self.request.user.teacher.courses.all()
-            print(queryset)  # Print the queryset to the console
-            return queryset
-        else:
-            return Course.objects.none()  # Return an empty QuerySet
+            pdfs = []
+        return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
     
+    def post(self, request, *args, **kwargs):
+        form = UploadFileForm(request.POST, request.FILES)
+        if form.is_valid():
+            if hasattr(request.user, 'teacher'):
+                teacher = request.user.teacher
+                pdf = PDF(file=request.FILES['file'], uploaded_by=teacher)
+                pdf.save()
+                teacher.pdfs.add(pdf)  # Add the PDF to the teacher's pdfs
+                return redirect('teacher_course')
+            else:
+                return render(request, 'app/error.html', {'message': 'You must be a teacher to upload a file.'})
+        return render(request, self.template_name, {'form': form})
+
+def delete_pdf(request, pdf_id):
+    pdf = get_object_or_404(PDF, id=pdf_id)
+    if request.user.teacher == pdf.uploaded_by:
+        pdf.file.delete()  # Delete the file from the file system
+        pdf.delete()  # Delete the PDF object from the database
+        return redirect('teacher_course')
+    else:
+        return render(request, 'app/error.html', {'message': 'You do not have permission to delete this file.'})
 class StudentCourseView(ListView):
     model = Course
     template_name = 'app/student_course.html'
@@ -211,27 +232,19 @@ class StudentCourseView(ListView):
         else:
             return redirect('student_ai_tutor')
 
-@login_required
-def upload_course_pdf(request):
-    if request.method == 'POST':
-        form = CourseForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('course')
-        else:
-            form = CourseForm()
-        return render(request, 'app/upload_course.html', {'form': form})
-    
-@login_required
-def course_upload(request):
-    if request.method == 'POST':
-        form = CourseForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('course_list')  # Redirect to a URL where you list the courses
+
+
+def handle_uploaded_file(f):
+    with open(f'some/file/{f.name}', 'wb+') as destination:
+        for chunk in f.chunks():
+            destination.write(chunk)
+            
+def pdf_view(request, filename):
+    file_path = os.path.join(settings.MEDIA_ROOT, filename)
+    if os.path.exists(file_path):
+        return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
     else:
-        form = CourseForm()
-    return render(request, 'app/course_upload.html', {'form': form})
+        return HttpResponseNotFound('File not found.')
 
 @login_required
 def course_list(request):

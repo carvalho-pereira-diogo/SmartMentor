@@ -6,7 +6,7 @@ from . import views
 from .views import *
 
 urlpatterns = [
-    path('signup/', views.signup, name='register'),
+    path('signup/', views.signup, name='signup'),
     path('login/', UserLoginView.as_view(), name='login'),
     path('signin/', views.signin, name='signin'),
     path('', include('django.contrib.auth.urls')),
@@ -21,10 +21,8 @@ urlpatterns = [
     #Example for the values of database
     path('student/course', StudentCourseView.as_view(), name='student_course'),
     path('teacher/course', TeacherCourseView.as_view(), name='teacher_course'),
-    
-    #path('course/<int:pk>', CourseView.as_view(), name='course'),
-    path('course/upload/', course_upload, name='course_upload'),
-    path('courses/', course_list, name='course_list'),
+    path('teacher/pdfs/<str:filename>/', views.pdf_view, name='pdf_view'),
+    path('teacher/delete_pdf/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     
     path('student/profile', StudentProfileView.as_view(), name='student_profile'),
     path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),

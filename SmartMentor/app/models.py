@@ -36,11 +36,19 @@ class Student(models.Model):
     def __str__(self):
         return self.profile.username
     
+    
+class PDF(models.Model):
+    file = models.FileField(upload_to='pdfs/')
+    uploaded_by = models.ForeignKey('Teacher', on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.file.name
+    
 class Course(models.Model):
     name = models.CharField(max_length=50, default='course')
     name_tag = models.CharField(max_length=50, default='course')
     progress = models.IntegerField(default=0)
-    pdf = models.FileField(upload_to='courses/', null=True)
+    pdfs = models.ManyToManyField(PDF, related_name='courses')  
     time_created = models.DateTimeField(auto_now_add=True, null=True)
     teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, null=True, related_name='taught_courses')
 
@@ -49,7 +57,9 @@ class Course(models.Model):
     
 
 class Teacher(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
+    pdfs = models.ManyToManyField(PDF, related_name='teachers')
     courses_list = models.ManyToManyField(Course, related_name='courses', through='LearningPath')
     
     def __str__(self):
@@ -57,6 +67,7 @@ class Teacher(models.Model):
     
 def get_default_teacher():
     return Teacher.objects.first().id
+
     
 class LearningPath(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)

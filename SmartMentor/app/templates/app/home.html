@@ -51,7 +51,7 @@
             </form>
           </div>
           {% else %}
-          <a href="{% url 'register' %}" class="w3-bar-item w3-button"
+          <a href="{% url 'signup' %}" class="w3-bar-item w3-button"
             ><i class="fa fa-th"></i> JOIN US</a
           >
           <a href="{% url 'login' %}" class="w3-bar-item w3-button"
@@ -109,7 +109,7 @@
           <i class="fa fa-user"></i> SIGN OUT
         </button>
       {% else %}
-      <a href="{% url 'register' %}" onclick="w3_close()" class="w3-bar-item w3-button"
+      <a href="{% url 'signup' %}" onclick="w3_close()" class="w3-bar-item w3-button"
       >Join US</a
       >
       <a href="{% url 'login' %}" onclick="w3_close()" class="w3-bar-item w3-button"

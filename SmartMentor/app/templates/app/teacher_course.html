@@ -93,31 +93,6 @@ Teacher Courses
                 </section>
             </div>
             <br />
-            <div class="container-xl">
-                <section>
-                    <h4>Upload PDF for a course:</h4>
-                    <form method="post" action="{% url 'teacher_course' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <label for="file">Choose a PDF file:</label>
-                        <br>
-                        <br>
-                        <input type="file" id="file" name="file" accept="application/pdf">
-                        <br>
-                        <br>
-                        <label for="course">Choose a course:</label>
-                        <br>
-                        <br>
-                        <select id="course" name="course">
-                            {% for course in user.profile.teacher.courses_list.all %}
-                                <option value="{{ course.id }}">{{ course.name }}</option>
-                            {% endfor %}
-                        </select>
-                        <br>
-                        <br>
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
-                    </form>
-                </section>
-            </div>
 
         {% else %}
             <h1>Access Denied</h1>

@@ -44,16 +44,6 @@ class LearningPathAdmin(admin.ModelAdmin):
 admin.site.register(LearningPath, LearningPathAdmin)
 
 # provided with a pdf from teacher and can be taken by the student
-class TutorAdmin(admin.ModelAdmin):
-    list_display = ('name', 'pdf_link')
-
-    def pdf_link(self, obj):
-        return format_html('<a href="{0}">PDF</a>', obj.pdf.url)
-    pdf_link.short_description = 'PDF'
-
-    search_fields = ('name',)
-    
-admin.site.register(Tutor, TutorAdmin)
 
 class QuizAdmin(admin.ModelAdmin):
     list_display = ('name',)

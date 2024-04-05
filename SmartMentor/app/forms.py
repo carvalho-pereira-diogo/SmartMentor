@@ -1,6 +1,5 @@
 from django import forms
-from .models import Profile, Student, Course, LearningPath, Quiz, Tutor, Teacher
-
+from .models import *
 class ProfileForm(forms.ModelForm):
     class Meta:
         model = Profile
@@ -26,15 +25,19 @@ class QuizForm(forms.ModelForm):
         model = Quiz
         fields = '__all__'
         
-class TutorForm(forms.ModelForm):
-    class Meta:
-        model = Tutor
-        fields = '__all__'
         
 class TeacherForm(forms.ModelForm):
     class Meta:
         model = Teacher
         fields = '__all__'
         
-class UploadFileForm(forms.Form):
-    file = forms.FileField()
+class TutorForm(forms.ModelForm):
+    class Meta:
+        model = Tutor
+        fields = '__all__'
+        
+# In forms.py
+class UploadFileForm(forms.ModelForm):
+    class Meta:
+        model = PDF
+        fields = ['file']

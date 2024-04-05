@@ -29,6 +29,6 @@ class Migration(migrations.Migration):
         migrations.AlterField(
             model_name='learningpath',
             name='teacher',
-            field=models.ForeignKey(default=app.models.get_default_teacher, on_delete=django.db.models.deletion.CASCADE, to='app.teacher'),
+            field=models.ForeignKey(default=1, on_delete=django.db.models.deletion.CASCADE, to='app.teacher'),
         ),
     ]

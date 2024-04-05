@@ -18,6 +18,12 @@ from .forms import *
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.management.base import BaseCommand
+from .agents import *
+from .tools import CourseToolset, PDFToolset, QuizToolset, TutorToolset, UserProfileToolset
+# is this possible that 
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
 
 # Defome courses inside the home view T
 
@@ -153,27 +159,27 @@ class TeacherQuizView(ListView):
             return redirect('teacher_quiz')
         
 class StudentQuizView(ListView):
-    model = Quiz
-    template_name = 'app/student_quiz.html'
-    
-    def get_object(self):
+    template_name = 'app/student_ai_tutor.html'
+
+    def get_queryset(self):
+        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
         if hasattr(self.request.user, 'student'):
-            return self.request.user.student
+            return Tutor.objects.filter(student=self.request.user.student)
         else:
-            return redirect('student_quiz')
+            return Tutor.objects.none()
         
-class TeacherTutorView(ListView):
-    model = Tutor
+class TeacherTutorView(LoginRequiredMixin, ListView):
     template_name = 'app/teacher_ai_tutor.html'
-    
-    def get_object(self):
+
+    def get_queryset(self):
+        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
         if hasattr(self.request.user, 'teacher'):
-            return self.request.user.teacher
+            return Tutor.objects.filter(teacher=self.request.user.teacher)
         else:
-            return redirect('teacher_ai_tutor')
+            return Tutor.objects.none()
         
 class StudentTutorView(ListView):
-    model = Tutor
+
     template_name = 'app/student_ai_tutor.html'
     
     def get_object(self):
@@ -181,38 +187,51 @@ class StudentTutorView(ListView):
             return self.request.user.student
         else:
             return redirect('student_ai_tutor')
-
-# is this possible that 
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
-from .forms import UploadFileForm
+        
 
 class TeacherCourseView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/teacher_course.html'
-    context_object_name = 'object_list'
-    
-    def get(self, request, *args, **kwargs):
-        form = UploadFileForm()
-        if hasattr(request.user, 'teacher'):
-            pdfs = request.user.teacher.pdfs.all()
-        else:
-            pdfs = []
-        return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
-    
+
     def post(self, request, *args, **kwargs):
+        # This method handles form submission for file uploads.
         form = UploadFileForm(request.POST, request.FILES)
         if form.is_valid():
+            pdf = form.save(commit=False)
             if hasattr(request.user, 'teacher'):
                 teacher = request.user.teacher
-                pdf = PDF(file=request.FILES['file'], uploaded_by=teacher)
+                pdf.uploaded_by = request.user.teacher
                 pdf.save()
                 teacher.pdfs.add(pdf)  # Add the PDF to the teacher's pdfs
-                return redirect('teacher_course')
+                
+            return redirect('teacher_course')
+        else:
+            pdfs = PDF.objects.filter(uploaded_by=request.user.teacher) if hasattr(request.user, 'teacher') else []
+            return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
+
+    def get(self, request, *args, **kwargs):
+            form = UploadFileForm()
+            if hasattr(request.user, 'teacher'):
+                pdfs = request.user.teacher.pdfs.all()
             else:
-                return render(request, 'app/error.html', {'message': 'You must be a teacher to upload a file.'})
-        return render(request, self.template_name, {'form': form})
+                pdfs = []
+            return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
+
+    def get_queryset(self):
+        # Override this method to return a QuerySet of PDF objects that were uploaded by the current user's Teacher instance
+        if hasattr(self.request.user, 'teacher'):
+            return PDF.objects.filter(uploaded_by=self.request.user.teacher)
+        else:
+            return PDF.objects.none()
+        
+    def delete_pdf(request, pdf_id):
+        pdf = get_object_or_404(PDF, id=pdf_id)
+        if hasattr(request.user, 'teacher') and request.user.teacher == pdf.uploaded_by:
+            pdf.file.delete()  # Delete the file from the file system
+            pdf.delete()  # Delete the PDF object from the database
+            return redirect('teacher_course')
+        else:
+            return render(request, 'app/error.html', {'message': 'You do not have permission to delete this file.'})
 
 def delete_pdf(request, pdf_id):
     pdf = get_object_or_404(PDF, id=pdf_id)
@@ -222,6 +241,7 @@ def delete_pdf(request, pdf_id):
         return redirect('teacher_course')
     else:
         return render(request, 'app/error.html', {'message': 'You do not have permission to delete this file.'})
+    
 class StudentCourseView(ListView):
     model = Course
     template_name = 'app/student_course.html'
@@ -245,6 +265,15 @@ def pdf_view(request, filename):
         return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
     else:
         return HttpResponseNotFound('File not found.')
+    
+import fitz  # PyMuPDF
+
+def extract_text_from_pdf(pdf_path):
+    doc = fitz.open(pdf_path)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 @login_required
 def course_list(request):

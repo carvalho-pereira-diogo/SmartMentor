@@ -1,20 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
 
-#import views
-
-#Create me different models:
-# We have a model Profile where Student is an extension of Profile:
-# In Profile we have:
-# username, fname, lname, email, role, password, date_created
-# In Student we have:
-# level
-# Now we also have Course which is a model who is an ai agent who takes a pdf and generates a course
-# Course and student are related by a many to many relationship
-# There's an association class between Course and Student called learning path
-# We also have a Quiz model which is a model that has a many to many relationship with Student
-# We also have a tutor which can help a student out which is an ai agent 
-# In the end we have a model called Teacher which is a normal profile and has only the ability to upload the pdf to the different Courses and Quizes and tutor
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -36,58 +22,73 @@ class Student(models.Model):
     def __str__(self):
         return self.profile.username
     
-    
 class PDF(models.Model):
     file = models.FileField(upload_to='pdfs/')
     uploaded_by = models.ForeignKey('Teacher', on_delete=models.CASCADE)
 
     def __str__(self):
         return self.file.name
-    
-class Course(models.Model):
-    name = models.CharField(max_length=50, default='course')
-    name_tag = models.CharField(max_length=50, default='course')
-    progress = models.IntegerField(default=0)
-    pdfs = models.ManyToManyField(PDF, related_name='courses')  
-    time_created = models.DateTimeField(auto_now_add=True, null=True)
-    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, null=True, related_name='taught_courses')
 
-    def __str__(self):
-        return self.name
     
-
 class Teacher(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     pdfs = models.ManyToManyField(PDF, related_name='teachers')
-    courses_list = models.ManyToManyField(Course, related_name='courses', through='LearningPath')
-    
+    courses_list = models.ManyToManyField('Course', related_name='courses', through='LearningPath')
+
     def __str__(self):
         return self.profile.username
-    
-def get_default_teacher():
-    return Teacher.objects.first().id
 
+    @staticmethod
+    def get_default_teacher():
+        default_teacher = Teacher.objects.first()
+        return default_teacher.id if default_teacher else None
     
+class Course(models.Model):
+    name = models.CharField(max_length=50, default='course')
+    description = models.CharField(max_length=200, default='Default description')
+    progress = models.IntegerField(default=0)
+    pdfs = models.ForeignKey(PDF, on_delete=models.SET_NULL, null=True, blank=True, related_name='courses')
+    time_created = models.DateTimeField(auto_now_add=True, null=True)
+    teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, related_name='courses', default=Teacher.get_default_teacher)
+
+    def __str__(self):
+        return self.name
+    
+class SomeModel(models.Model):
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=Teacher.get_default_teacher, null=True)
+
 class LearningPath(models.Model):
     student = models.ForeignKey(Student, on_delete=models.CASCADE)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=get_default_teacher) 
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=Teacher.get_default_teacher, null=True)
     
     def __str__(self):
         return f'{self.student.profile.username} - {self.course.name}'
-    
+
+from django.db import models
+
 class Quiz(models.Model):
-    name = models.CharField(max_length=50)
-    students = models.ManyToManyField(Student)
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=200, default='Default description')
+
+class Question(models.Model):
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
+    text = models.CharField(max_length=512)
+
+class Option(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
+    text = models.CharField(max_length=512)
+    is_correct = models.BooleanField(default=False)
     
-    def __str__(self):
-        return self.name
     
+    
+# Create me a model for my chatbot and view called Tutor
+
 class Tutor(models.Model):
-    name = models.CharField(max_length=50)
-    pdf = models.FileField(upload_to='tutors/')
+    name = models.CharField(max_length=255)
+    description = models.CharField(max_length=200, default='Default description')
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='tutors')
     
     def __str__(self):
         return self.name
-    

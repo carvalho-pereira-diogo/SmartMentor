@@ -15,24 +15,29 @@ AI Tutor
         </button>
         <div class="collapse navbar-collapse" id="navbarSupportedContent">
           <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-            <li class="nav-item">
-              <a class="nav-link" href="/teacher/profile">Profile</a>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFS</a>
             </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/teacher/course">Courses</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/teacher/quiz">Quizzes</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/teacher/ai_tutor">Tutor</a>
-            </li>
-            <li class="nav-item">
-              <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                {% csrf_token %}
-                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-            </li>
-        </div>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'teacher_quiz' %}">Quizzes</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'teacher_ai_tutor' %}">Tutor</a>
+              </li>
+              <li class="nav-item">
+                  <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                      {% csrf_token %}
+                      <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                  </form>
+              </li>
+          </ul>
+      </div>
       </div>
     </nav>
 

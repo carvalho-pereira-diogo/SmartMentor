@@ -4,8 +4,12 @@ from crewai import Agent
 from .tools import CourseToolset, PDFToolset, QuizToolset, TutorToolset, UserProfileToolset
 
 class LearningAgents():
+    def __init__(self, openai_api_key):
+        self.openai_api_key = openai_api_key
+    
     def course_agent(self):
         agent = Agent(
+            openai_api_key=self.openai_api_key, 
             role="Course Agent",
             goal=dedent("""\
                 Manage and deliver comprehensive course content tailored to the user's learning path.
@@ -14,6 +18,7 @@ class LearningAgents():
             backstory=dedent("""\
                 The Course Agent is designed to curate and manage educational content, ensuring users have access to up-to-date and relevant learning materials.
             """),
+            
             verbose=True
         )
 
@@ -95,3 +100,4 @@ class LearningAgents():
             """),
             verbose=True
         )
+        

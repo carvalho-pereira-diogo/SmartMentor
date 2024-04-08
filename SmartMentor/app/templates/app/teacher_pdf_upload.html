@@ -41,68 +41,40 @@ Teacher Courses
                 </div>
             </nav>
 
-            <br>
-
-            <div class="container-xl">
-                <section>
-                    <h1>Teacher Course Section</h1>
-                    <br>
-                    <br>
-                    <h4>Course List:</h4>
-                    <!-- Check if courses are empty-->
-                    {% if user.profile.teacher.courses_list %}
-                        {% for course in user.profile.teacher.courses_list.all %}
-                        <p>Course: <a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></p>
-                        <p>Progress: {{ course.progress }}</p>
-                        {% endfor %}
-                    {% endif %}
-                    <!-- Check if list is empty-->
-                    {% if user.profile.teacher.courses_list.all|length == 0 %}
-                        <p>No courses created, must upload pdfs to create course!</p>
-                    {% endif %}
-
-                </section>
-            </div>
+            <br />
             <br />
             <div class="container-xl">
                 <section>
                     <h4>PDF list:</h4>
                     {% if user.teacher %}
                         {% for pdf in user.teacher.pdfs.all %}
-                        
-                            <p>PDF: <a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a>
-                            
-                            
+                            <form method="post" action="{% url 'delete_pdf' pdf.id %}">
+                                {% csrf_token %}
+                                <p>PDF: <a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a>
+                                <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
+                            </form>
                         {% empty %}
                             <p>No PDFs uploaded</p>
                         {% endfor %}
                     {% else %}
-                        <p>No PDFs uploaded</p>
+                        <p>You must be a teacher to upload a file.</p>
                     {% endif %}
                 </section>
             </div>
             <br />
             <div class="container-xl">
                 <section>
-                    <h4>Create a course:</h4>
-                    <form method="post" action="{% url 'teacher_courses' %}" enctype="multipart/form-data">
+                    <h4>Upload PDF for creation of a course:</h4>
+                    <form method="post" action="{% url 'teacher_pdfs' %}" enctype="multipart/form-data">
                         {% csrf_token %}
-                        <label for="name">Course name:</label>
-                        <input type="text" id="name" name="name" required>
+                        <label for="file">Choose a PDF file:</label>
                         <br>
-                        <label for="description">Course description:</label>
-                        <input type="text" id="description" name="description" required>
                         <br>
-                        <label for="pdfs">Select PDFs:</label>
-                        <select class="form-select" id="pdfs" name="pdfs" multiple required>
-                            {% for pdf in user.teacher.pdfs.all %}
-                                <option value="{{ pdf.pk }}">{{ pdf.file.name }}</option>
-                            {% endfor %}
-                        </select>
+                        <input type="file" id="file" name="file" accept="application/pdf">
                         <br>
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Create</button>
+                        <br>
+                        <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
                     </form>
-                    
                 </section>
             </div>
             <br />

@@ -13,7 +13,7 @@ class StudentForm(forms.ModelForm):
 class CourseForm(forms.ModelForm):
     class Meta:
         model = Course
-        fields = '__all__'
+        fields = ['name', 'description', 'pdfs']
         
 class LearningPathForm(forms.ModelForm):
     class Meta:
@@ -38,6 +38,11 @@ class TutorForm(forms.ModelForm):
         
 # In forms.py
 class UploadFileForm(forms.ModelForm):
+    class Meta:
+        model = PDF
+        fields = ['file']
+        
+class PDFUploadForm(forms.ModelForm):
     class Meta:
         model = PDF
         fields = ['file']

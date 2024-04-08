@@ -20,9 +20,16 @@ urlpatterns = [
     
     #Example for the values of database
     path('student/course', StudentCourseView.as_view(), name='student_course'),
-    path('teacher/course', TeacherCourseView.as_view(), name='teacher_course'),
-    path('teacher/pdfs/<str:filename>/', views.pdf_view, name='pdf_view'),
-    path('teacher/delete_pdf/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
+    path('teacher/courses', TeacherCourseView.as_view(), name='teacher_courses'),
+    # Create course for teacher
+    path('teacher/course/create/', TeacherCourseView.as_view(), name='teacher_course_create'),
+    
+    path('teacher/pdfs/delete/<int:pdf_id>/', delete_pdf, name='delete_pdf'),
+    
+    path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
+    
+    path('teacher/course/create/', TeacherCourseView.as_view(), name='teacher_course_create'),
+    path('student/enroll/<int:course_id>/', enroll_in_course, name='enroll_in_course'),
     
     path('student/profile', StudentProfileView.as_view(), name='student_profile'),
     path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),

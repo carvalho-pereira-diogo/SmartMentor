@@ -5,7 +5,7 @@ import fitz
 
 # Rest of your code...
 
-class PDFToolset():
+class PDFToolset:
     @staticmethod
     def extract_text(pdf_path: str):
         """Extract text from a given PDF file using PyMuPDF."""
@@ -15,6 +15,12 @@ class PDFToolset():
             text += page.get_text()
         doc.close()
         return text
+
+    @classmethod
+    def tools(cls):
+        return [
+            cls.extract_text,
+        ]
 
 class CourseToolset():
     @staticmethod

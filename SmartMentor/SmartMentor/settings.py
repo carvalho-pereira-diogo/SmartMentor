@@ -138,3 +138,5 @@ MEDIA_URL = '/media/'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'home'
 
+OPENAI_API_KEY  = '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'
+

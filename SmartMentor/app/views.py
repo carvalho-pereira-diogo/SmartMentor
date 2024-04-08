@@ -11,7 +11,7 @@ from django.db import transaction
 from django.views.generic import ListView, DetailView
 from django.views import generic
 from django.contrib.auth.forms import UserCreationForm
-from django.urls import reverse_lazy
+from django.urls import reverse, reverse_lazy
 from django.db import IntegrityError
 from .models import *
 from .forms import *
@@ -24,6 +24,8 @@ from .tools import CourseToolset, PDFToolset, QuizToolset, TutorToolset, UserPro
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.views.generic import ListView
+import fitz 
+
 
 # Defome courses inside the home view T
 
@@ -158,6 +160,7 @@ class TeacherQuizView(ListView):
         else:
             return redirect('teacher_quiz')
         
+            
 class StudentQuizView(ListView):
     template_name = 'app/student_ai_tutor.html'
 
@@ -180,68 +183,96 @@ class TeacherTutorView(LoginRequiredMixin, ListView):
         
 class StudentTutorView(ListView):
 
+    model = Course
     template_name = 'app/student_ai_tutor.html'
     
-    def get_object(self):
+    def get_queryset(self):
+        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
         if hasattr(self.request.user, 'student'):
-            return self.request.user.student
+            return Tutor.objects.filter(teacher=self.request.user.student)
         else:
-            return redirect('student_ai_tutor')
+            return Tutor.objects.none()
         
+    
+    
+@login_required
+def enroll_in_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    student = request.user.student  # Assuming your Student model is linked to the User model
+    student.courses.add(course)  # Assuming your Student model has a 'courses' many-to-many field to Course
+    messages.success(request, f"Enrolled in {course.title} successfully!")
+    return redirect('student_course_view')  # Adjust to your named URL for the student course view
 
-class TeacherCourseView(LoginRequiredMixin, ListView):
-    model = Course
-    template_name = 'app/teacher_course.html'
-
-    def post(self, request, *args, **kwargs):
-        # This method handles form submission for file uploads.
-        form = UploadFileForm(request.POST, request.FILES)
-        if form.is_valid():
-            pdf = form.save(commit=False)
-            if hasattr(request.user, 'teacher'):
-                teacher = request.user.teacher
-                pdf.uploaded_by = request.user.teacher
-                pdf.save()
-                teacher.pdfs.add(pdf)  # Add the PDF to the teacher's pdfs
-                
-            return redirect('teacher_course')
-        else:
-            pdfs = PDF.objects.filter(uploaded_by=request.user.teacher) if hasattr(request.user, 'teacher') else []
-            return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
-
-    def get(self, request, *args, **kwargs):
-            form = UploadFileForm()
-            if hasattr(request.user, 'teacher'):
-                pdfs = request.user.teacher.pdfs.all()
-            else:
-                pdfs = []
-            return render(request, self.template_name, {'form': form, 'pdfs': pdfs})
+class TeacherPDFView(LoginRequiredMixin, ListView):
+    model = PDF
+    form_class = PDFUploadForm
+    template_name = 'app/teacher_pdf_upload.html'
 
     def get_queryset(self):
-        # Override this method to return a QuerySet of PDF objects that were uploaded by the current user's Teacher instance
         if hasattr(self.request.user, 'teacher'):
             return PDF.objects.filter(uploaded_by=self.request.user.teacher)
         else:
             return PDF.objects.none()
-        
-    def delete_pdf(request, pdf_id):
-        pdf = get_object_or_404(PDF, id=pdf_id)
-        if hasattr(request.user, 'teacher') and request.user.teacher == pdf.uploaded_by:
-            pdf.file.delete()  # Delete the file from the file system
-            pdf.delete()  # Delete the PDF object from the database
-            return redirect('teacher_course')
-        else:
-            return render(request, 'app/error.html', {'message': 'You do not have permission to delete this file.'})
 
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, request.FILES)
+        if form.is_valid():
+            pdf = form.save(commit=False)
+            if hasattr(request.user, 'teacher'):
+                pdf.uploaded_by = request.user.teacher
+                pdf.save()
+                request.user.teacher.pdfs.add(pdf)
+            return redirect('teacher_pdfs')
+        else:
+            pdfs = self.get_queryset()
+            return render(request, self.template_name, {'form': form, 'object_list': pdfs})
+
+from django.shortcuts import render, redirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from .models import Course, PDF
+from .forms import CourseForm
+
+from .agents import *
+class TeacherCourseView(LoginRequiredMixin, ListView):
+    model = Course
+    form_class = CourseForm
+    template_name = 'app/teacher_course.html'
+
+    def get_queryset(self):
+        if hasattr(self.request.user, 'teacher'):
+            return Course.objects.filter(teacher=self.request.user.teacher)
+        else:
+            return Course.objects.none()
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST)
+        if form.is_valid():
+            course = form.save(commit=False)
+            if hasattr(request.user, 'teacher'):
+                course.teacher = request.user.teacher
+                course.save()
+                form.save_m2m()  # Save the many-to-many data
+
+                # Create an agent for the course
+                learning_agents = LearningAgents(openai_api_key=settings.OPENAI_API_KEY)
+                course_agent = learning_agents.course_agent()
+                # Save the agent to the course
+                course.agent = course_agent
+                course.save()
+
+            return redirect('teacher_courses')
+        else:
+            courses = self.get_queryset()
+            return render(request, self.template_name, {'form': form, 'object_list': courses})
+
+@login_required
 def delete_pdf(request, pdf_id):
     pdf = get_object_or_404(PDF, id=pdf_id)
-    if request.user.teacher == pdf.uploaded_by:
-        pdf.file.delete()  # Delete the file from the file system
-        pdf.delete()  # Delete the PDF object from the database
-        return redirect('teacher_course')
-    else:
-        return render(request, 'app/error.html', {'message': 'You do not have permission to delete this file.'})
-    
+    if request.user.is_authenticated and hasattr(request.user, 'teacher') and pdf.uploaded_by == request.user.teacher:
+        pdf.delete()
+        request.user.teacher.pdfs.remove(pdf)
+    return redirect('teacher_pdfs')
 class StudentCourseView(ListView):
     model = Course
     template_name = 'app/student_course.html'
@@ -252,21 +283,8 @@ class StudentCourseView(ListView):
         else:
             return redirect('student_ai_tutor')
 
-
-
-def handle_uploaded_file(f):
-    with open(f'some/file/{f.name}', 'wb+') as destination:
-        for chunk in f.chunks():
-            destination.write(chunk)
-            
-def pdf_view(request, filename):
-    file_path = os.path.join(settings.MEDIA_ROOT, filename)
-    if os.path.exists(file_path):
-        return FileResponse(open(file_path, 'rb'), content_type='application/pdf')
-    else:
-        return HttpResponseNotFound('File not found.')
     
-import fitz  # PyMuPDF
+
 
 def extract_text_from_pdf(pdf_path):
     doc = fitz.open(pdf_path)

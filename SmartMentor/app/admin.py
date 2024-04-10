@@ -38,23 +38,21 @@ class CourseAdmin(admin.ModelAdmin):
     
 admin.site.register(Course, CourseAdmin)
 
-class LearningPathAdmin(admin.ModelAdmin):
-    list_display = ('student', 'course', 'teacher')
-    
-admin.site.register(LearningPath, LearningPathAdmin)
-
-# provided with a pdf from teacher and can be taken by the student
+admin.site.register(LearningPath)
 
 class QuizAdmin(admin.ModelAdmin):
     list_display = ('name',)
 
     search_fields = ('name',)
-    
-admin.site.register(Quiz, QuizAdmin)
 
-# PDFs uploaded by teachers
+admin.site.register(Quiz, QuizAdmin)
+admin.site.register(QuizEnrollment)
+admin.site.register(QuizScore)
+
 class PDFAdmin(admin.ModelAdmin):
     list_display = ('file', 'uploaded_by')
 
     search_fields = ('file', 'uploaded_by')
+
+admin.site.register(PDF, PDFAdmin)
 

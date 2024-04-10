@@ -1,0 +1,50 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Student Quiz
+{% endblock %}
+
+{% block content %}
+  {% if user.is_authenticated %}
+    {% if user.profile.role == 'student' %}
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="/">SmartMentor</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarSupportedContent">
+            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                <a class="nav-link" href="/student/profile">Profile</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/student/course">Courses</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/student/quiz">Quizzes</a>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="/student/ai_tutor">Tutor</a>
+              </li>
+              <li class="nav-item">
+                <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                  {% csrf_token %}
+                  <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+              </li>
+          </div>
+        </div>
+      </nav>
+
+        <br>
+
+      {% else %}
+      <h1>Access Denied</h1>
+      <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
+  {% endif %}
+  {% else %}
+      <h1>Access Denied</h1>
+      <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+  {% endif %}
+
+{% endblock %}

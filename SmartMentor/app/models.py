@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.contrib.auth.models import User
 
 
 class Profile(models.Model):
@@ -18,7 +19,7 @@ class Student(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     level = models.CharField(max_length=10, default='beginner')
     list_of_courses = models.ManyToManyField('Course', related_name='students', through='LearningPath')
-
+    
     def __str__(self):
         return self.profile.username
     
@@ -35,7 +36,7 @@ class Teacher(models.Model):
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     pdfs = models.ManyToManyField(PDF, related_name='teachers')
     courses_list = models.ManyToManyField('Course', related_name='courses', through='LearningPath')
-
+    
     def __str__(self):
         return self.profile.username
 
@@ -54,32 +55,39 @@ class Course(models.Model):
 
     def __str__(self):
         return self.name
-class SomeModel(models.Model):
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=Teacher.get_default_teacher, null=True)
 
 class LearningPath(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    LEVEL_CHOICES = [
+        ('beginner', 'Beginner'),
+        ('intermediate', 'Intermediate'),
+        ('advanced', 'Advanced'),
+    ]
+
+    student = models.ForeignKey(Student, on_delete=models.CASCADE, null=True, blank=True)
+    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, null=True, blank=True)
     course = models.ForeignKey(Course, on_delete=models.CASCADE)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, default=Teacher.get_default_teacher, null=True)
+    level = models.CharField(max_length=20, choices=LEVEL_CHOICES, default='beginner')
+
+    def __str__(self):
+        return f'{self.student.profile.username if self.student else self.teacher.profile.username} - {self.course.name} - {self.level}'
     
     def __str__(self):
-        return f'{self.student.profile.username} - {self.course.name}'
-
-from django.db import models
+        return f'{self.student.profile.username if self.student else self.teacher.profile.username} - {self.course.name}'
 
 class Quiz(models.Model):
+    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=200, default='Default description')
-
-class Question(models.Model):
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name='questions')
-    text = models.CharField(max_length=512)
-
-class Option(models.Model):
-    question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name='options')
-    text = models.CharField(max_length=512)
-    is_correct = models.BooleanField(default=False)
     
+class QuizEnrollment(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+
+class QuizScore(models.Model):
+    student = models.ForeignKey(Student, on_delete=models.CASCADE)
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE)
+    score = models.IntegerField()
+    
+
     
     
 # Create me a model for my chatbot and view called Tutor

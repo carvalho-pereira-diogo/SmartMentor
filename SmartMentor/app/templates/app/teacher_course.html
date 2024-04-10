@@ -84,25 +84,21 @@ Teacher Courses
             <br />
             <div class="container-xl">
                 <section>
-                    <h4>Create a course:</h4>
-                    <form method="post" action="{% url 'teacher_courses' %}" enctype="multipart/form-data">
+                    <h4>Create a new course:</h4>
+                    <form action="{% url 'course_create' %}" method="post">
                         {% csrf_token %}
-                        <label for="name">Course name:</label>
-                        <input type="text" id="name" name="name" required>
-                        <br>
-                        <label for="description">Course description:</label>
-                        <input type="text" id="description" name="description" required>
-                        <br>
-                        <label for="pdfs">Select PDFs:</label>
-                        <select class="form-select" id="pdfs" name="pdfs" multiple required>
+                        <label for="name">Course Name:</label><br>
+                        <input type="text" id="name" name="name"><br>
+                        <label for="description">Course Description:</label><br>
+                        <input type="text" id="description" name="description"><br>
+                        <label for="pdfs">Select PDFs:</label><br>
+                        <select id="pdfs" name="pdfs" multiple>
                             {% for pdf in user.teacher.pdfs.all %}
-                                <option value="{{ pdf.pk }}">{{ pdf.file.name }}</option>
+                                <option value="{{ pdf.id }}">{{ pdf.file.name }}</option>
                             {% endfor %}
-                        </select>
-                        <br>
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Create</button>
+                        </select><br>
+                        <input type="submit" value="Create Course">
                     </form>
-                    
                 </section>
             </div>
             <br />

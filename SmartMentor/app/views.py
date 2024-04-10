@@ -1,7 +1,8 @@
 import os
+import fitz 
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
-from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect
+from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
 from django.contrib import messages
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
@@ -13,21 +14,21 @@ from django.views import generic
 from django.contrib.auth.forms import UserCreationForm
 from django.urls import reverse, reverse_lazy
 from django.db import IntegrityError
-from .models import *
-from .forms import *
+from django.shortcuts import get_object_or_404, redirect, render
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from django.views.generic.edit import CreateView
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
 from django.core.management.base import BaseCommand
-from .agents import *
-from .tools import CourseToolset, PDFToolset, QuizToolset, TutorToolset, UserProfileToolset
-# is this possible that 
-from django.shortcuts import get_object_or_404, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
-import fitz 
+from django.views.decorators.http import require_POST
+from .models import *
+from .forms import *
+from .agents import LearningAgents
+from .tools import *
+from .tasks import *
 
-
-# Defome courses inside the home view T
+learning_agents = LearningAgents(openai_api_key='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')
 
 def home(request):
     return render(request, 'app/home.html')
@@ -75,8 +76,6 @@ def signup(request):
             messages.error(request, "Username should only contain letters and numbers.")
             return redirect('signup')
 
-        # Create User and Profile instances within an atomic transaction
-        # Create User
         try:
             with transaction.atomic():
                 user = User.objects.create_user(username=username, first_name=fname, last_name=lname, email=email, password=pass1)
@@ -96,9 +95,7 @@ def signup(request):
             messages.error(request, f"An error occurred: {e}")
             return redirect('signup')
     else:
-        # If it's not a POST request, just render the signup form page.
         return render(request, 'app/signup.html')
-
 
 def signin(request):
     if request.method == "POST":
@@ -123,21 +120,6 @@ def signin(request):
 def signout(request):
     logout(request)
     return redirect('home')
-    
-class StudentProfileView(LoginRequiredMixin, DetailView):
-    model = Teacher
-    template_name = 'app/student_profile.html'
-    
-    #Get the courses of the teacher
-    def get_object(self):
-        if hasattr(self.request.user, 'student'):
-            return self.request.user.student
-        else:
-            return redirect('student_profile')
-        
-
-    
-from django.shortcuts import redirect
 
 class TeacherProfileView(LoginRequiredMixin, DetailView):
     model = Teacher
@@ -160,17 +142,6 @@ class TeacherQuizView(ListView):
         else:
             return redirect('teacher_quiz')
         
-            
-class StudentQuizView(ListView):
-    template_name = 'app/student_ai_tutor.html'
-
-    def get_queryset(self):
-        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
-        if hasattr(self.request.user, 'student'):
-            return Tutor.objects.filter(student=self.request.user.student)
-        else:
-            return Tutor.objects.none()
-        
 class TeacherTutorView(LoginRequiredMixin, ListView):
     template_name = 'app/teacher_ai_tutor.html'
 
@@ -181,28 +152,6 @@ class TeacherTutorView(LoginRequiredMixin, ListView):
         else:
             return Tutor.objects.none()
         
-class StudentTutorView(ListView):
-
-    model = Course
-    template_name = 'app/student_ai_tutor.html'
-    
-    def get_queryset(self):
-        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
-        if hasattr(self.request.user, 'student'):
-            return Tutor.objects.filter(teacher=self.request.user.student)
-        else:
-            return Tutor.objects.none()
-        
-    
-    
-@login_required
-def enroll_in_course(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    student = request.user.student  # Assuming your Student model is linked to the User model
-    student.courses.add(course)  # Assuming your Student model has a 'courses' many-to-many field to Course
-    messages.success(request, f"Enrolled in {course.title} successfully!")
-    return redirect('student_course_view')  # Adjust to your named URL for the student course view
-
 class TeacherPDFView(LoginRequiredMixin, ListView):
     model = PDF
     form_class = PDFUploadForm
@@ -227,13 +176,24 @@ class TeacherPDFView(LoginRequiredMixin, ListView):
             pdfs = self.get_queryset()
             return render(request, self.template_name, {'form': form, 'object_list': pdfs})
 
-from django.shortcuts import render, redirect
-from django.contrib.auth.mixins import LoginRequiredMixin
-from django.views.generic import ListView
-from .models import Course, PDF
-from .forms import CourseForm
+class CourseCreateView(CreateView):
+    model = Course
+    fields = ['name', 'description', 'pdfs']  # Replace with the actual fields of the Course model
+    template_name = 'app/course_form.html'  # Replace with the actual name of your template
 
-from .agents import *
+    def form_valid(self, form):
+        form.instance.teacher = self.request.user.teacher
+        return super().form_valid(form)
+    
+class CourseDetailView(DetailView):
+    model = Course
+    template_name = 'app/course_detail.html'  # Replace with the actual name of your template
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['agent_output'] = learning_agents.get_output_for_course(self.object)
+        return context
+
 class TeacherCourseView(LoginRequiredMixin, ListView):
     model = Course
     form_class = CourseForm
@@ -267,24 +227,30 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
             return render(request, self.template_name, {'form': form, 'object_list': courses})
 
 @login_required
+def create_course(request):
+    if request.method == 'POST':
+        form = CourseForm(request.POST)
+        if form.is_valid():
+            course = form.save()
+
+            # Use the CourseAgent to process PDFs for the course
+            course_agent = learning_agents.course_agent()
+            pdf_paths = []  # Replace with the actual PDF paths
+            course_materials = course_agent.process_pdfs_for_course(pdf_paths)
+
+            return redirect('course_detail', course_id=course.id)
+    else:
+        form = CourseForm()
+
+    return render(request, 'app/teacher_course.html', {'form': form})
+
+@login_required
 def delete_pdf(request, pdf_id):
     pdf = get_object_or_404(PDF, id=pdf_id)
     if request.user.is_authenticated and hasattr(request.user, 'teacher') and pdf.uploaded_by == request.user.teacher:
         pdf.delete()
         request.user.teacher.pdfs.remove(pdf)
     return redirect('teacher_pdfs')
-class StudentCourseView(ListView):
-    model = Course
-    template_name = 'app/student_course.html'
-    
-    def get_object(self):
-        if hasattr(self.request.user, 'student'):
-            return self.request.user.student
-        else:
-            return redirect('student_ai_tutor')
-
-    
-
 
 def extract_text_from_pdf(pdf_path):
     doc = fitz.open(pdf_path)
@@ -311,13 +277,96 @@ def teacher_courses(request):
         courses = Course.objects.none()
     return render(request, 'te_courses.html', {'courses': courses})
 
+class StudentProfileView(LoginRequiredMixin, DetailView):
+    model = Teacher
+    template_name = 'app/student_profile.html'
+    
+    #Get the courses of the teacher
+    def get_object(self):
+        if hasattr(self.request.user, 'student'):
+            return self.request.user.student
+        else:
+            return redirect('student_profile')
+        
+        
+# Change the JSONresponse to a redirection to somewhere in the webapp
+        
+@login_required
+@require_POST
+def enroll_in_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    request.user.student.courses.add(course)
+    return redirect('course_detail', course_id=course.id) 
+
+@login_required
+@require_POST
+def enroll_in_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    student = get_object_or_404(Student, profile__user=request.user)
+    # Use the QuizAgent to do something
+    quiz_agent = learning_agents.quiz_agent()
+    # quiz_agent.do_something()
+
+    return redirect('quiz_detail', quiz_id=quiz.id)
+
+@login_required
+@require_POST
+def submit_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    student = get_object_or_404(Student, profile__user=request.user)
+    score = int(request.POST.get('score'))  # Convert the score to an integer
+
+    # Save the quiz score
+    quiz_score = QuizScore(student=student, quiz=quiz, score=score)
+    quiz_score.save()
+
+    # Update the LearningPath based on the score
+    learning_path = get_object_or_404(LearningPath, student=student, course=quiz.course)
+    if 0 <= score <= 74:
+        learning_path.level = 'Beginner'
+    elif 75 <= score <= 89:
+        learning_path.level = 'Intermediate'
+    elif 90 <= score <= 100:
+        learning_path.level = 'Advanced'
+    learning_path.save()
+
+    return render(request, 'app/quiz_result.html', {'learning_path': learning_path})
+
+        
+class StudentQuizView(ListView):
+    template_name = 'app/student_ai_tutor.html'
+
+    def get_queryset(self):
+        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
+        if hasattr(self.request.user, 'student'):
+            return Tutor.objects.filter(student=self.request.user.student)
+        else:
+            return Tutor.objects.none()
+        
+class StudentTutorView(ListView):
+
+    model = Course
+    template_name = 'app/student_ai_tutor.html'
+    
+    def get_queryset(self):
+        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
+        if hasattr(self.request.user, 'student'):
+            return Tutor.objects.filter(teacher=self.request.user.student)
+        else:
+            return Tutor.objects.none()
+
+class StudentCourseView(ListView):
+    model = Course
+    template_name = 'app/student_course.html'
+    
+    def get_object(self):
+        if hasattr(self.request.user, 'student'):
+            return self.request.user.student
+        else:
+            return redirect('student_ai_tutor')
+
 def stu_dashboard(request):
     return render(request, 'app/stu_dashboard.html')
 
 def te_dashboard(request):
     return render(request, 'app/te_dashboard.html')
-
-
-#Later on, create UpdateCourseView and DeleteCourseView classes
-#Create 2 different profile views, one for students and one for teachers
-    

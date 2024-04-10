@@ -28,8 +28,7 @@ urlpatterns = [
     
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
     
-    path('teacher/course/create/', TeacherCourseView.as_view(), name='teacher_course_create'),
-    path('student/enroll/<int:course_id>/', enroll_in_course, name='enroll_in_course'),
+    path('teacher/course/create/', CourseCreateView.as_view(), name='course_create'),
     
     path('student/profile', StudentProfileView.as_view(), name='student_profile'),
     path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.utils.html import format_html
+from django.utils.html import format_html, mark_safe
 from .models import *
 
 admin.site.register(Profile)
@@ -28,14 +28,15 @@ class TeacherAdmin(admin.ModelAdmin):
 admin.site.register(Teacher, TeacherAdmin)
 
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ('name', 'pdf_link')
+    list_display = ('name', 'teacher', 'pdf_link')
 
     def pdf_link(self, obj):
-        return format_html('<a href="{0}">PDF</a>', obj.pdf.url)
-    pdf_link.short_description = 'PDF'
+        links = []
+        for pdf in obj.pdfs.all():
+            links.append(format_html('<a href="{0}">PDF</a>', pdf.file.url))
+        return mark_safe("<br>".join(links))
+    pdf_link.short_description = 'PDF Link'
 
-    search_fields = ('name',)
-    
 admin.site.register(Course, CourseAdmin)
 
 admin.site.register(LearningPath)

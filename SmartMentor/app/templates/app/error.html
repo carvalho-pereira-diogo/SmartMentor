@@ -1,11 +1,11 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Error</title>
-</head>
-<body>
+{% extends "app/base.html" %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="container">
     <h1>Error</h1>
     <p>{{ message }}</p>
-    <p><a href="/">Back to home</a></p>
-</body>
-</html>
+    <a href="{% url 'home' %}" class="btn btn-primary">Return Home</a>
+</div>
+{% endblock %}

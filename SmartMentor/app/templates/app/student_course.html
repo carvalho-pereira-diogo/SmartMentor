@@ -7,52 +7,87 @@ Courses
 {% block content %}
     {% if user.is_authenticated %}
         {% if user.profile.role == 'student' %}
-        <nav class="navbar navbar-expand-lg bg-body-tertiary">
-          <div class="container-fluid">
-            <a class="navbar-brand" href="/">SmartMentor</a>
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-              <span class="navbar-toggler-icon"></span>
-            </button>
-            <div class="collapse navbar-collapse" id="navbarSupportedContent">
-              <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                <li class="nav-item">
-                  <a class="nav-link" href="/student/profile">Profile</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/student/course">Courses</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/student/quiz">Quizzes</a>
-                </li>
-                <li class="nav-item">
-                  <a class="nav-link" href="/student/ai_tutor">Tutor</a>
-                </li>
-                <li class="nav-item">
-                  <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                    {% csrf_token %}
-                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-                </li>
+            <nav class="navbar navbar-expand-lg bg-body-tertiary">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="{% url 'home' %}">SmartMentor</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_profile' %}">Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_courses' %}">Courses</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_quiz' %}">Quizzes</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_ai_tutor' %}">Tutor</a>
+                            </li>
+                            <li class="nav-item">
+                                <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <br>
+
+            <div class="container-xl">
+                <section>
+                    <h4>Student Course List</h4>
+                    <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
+                    <p>Here, you can access different courses.</p>
+                    <form method="post" action="{% url 'enroll_course' %}">
+                        {% csrf_token %}
+                        <label for="course">Select a course:</label>
+                        <select id="course" name="course">
+                            {% for course in all_courses %}
+                                <option value="{{ course.id }}">{{ course.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <input type="submit" value="Enroll">
+                    </form>
+                </section>
             </div>
-          </div>
-        </nav>
 
-        <br>
+            <br>
 
-        <div class="container-xl">
-          <section>
-              <h4>Student Course List</h4>
-              <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
-              <p>Here, you access for the different Courses</p>
-          </section>
-      </div>
+            <div class="container-xl">
+                <section>
+                    <h4>Enrolled Courses</h4>
+                    <p>Here are the courses you have enrolled in:</p>
+                    <ul>
+                        {% for course in user.profile.student.courses.all %}
+                            <li>
+                                {{ course.name }}
+                                <!-- Unenroll Form -->
+                                <form method="post" action="{% url 'unenroll_course' course.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">Unenroll</button>
+                                </form>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </section>
+            </div>
 
+            <br>
+
+        {% else %}
+            <h1>Access Denied</h1>
+            <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
+        {% endif %}
     {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-  {% endif %}
-  {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
-  {% endif %}
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+    {% endif %}
 
 {% endblock %}

@@ -176,23 +176,20 @@ class TeacherPDFView(LoginRequiredMixin, ListView):
             pdfs = self.get_queryset()
             return render(request, self.template_name, {'form': form, 'object_list': pdfs})
 
-class CourseCreateView(CreateView):
-    model = Course
-    fields = ['name', 'description', 'pdfs']  # Replace with the actual fields of the Course model
-    template_name = 'app/course_form.html'  # Replace with the actual name of your template
+@login_required
+def delete_pdf(request, pdf_id):
+    pdf = get_object_or_404(PDF, id=pdf_id)
+    if request.user.is_authenticated and hasattr(request.user, 'teacher') and pdf.uploaded_by == request.user.teacher:
+        pdf.delete()
+        request.user.teacher.pdfs.remove(pdf)
+    return redirect('teacher_pdfs')
 
-    def form_valid(self, form):
-        form.instance.teacher = self.request.user.teacher
-        return super().form_valid(form)
-    
-class CourseDetailView(DetailView):
-    model = Course
-    template_name = 'app/course_detail.html'  # Replace with the actual name of your template
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['agent_output'] = learning_agents.get_output_for_course(self.object)
-        return context
+def extract_text_from_pdf(pdf_path):
+    doc = fitz.open(pdf_path)
+    text = ""
+    for page in doc:
+        text += page.get_text()
+    return text
 
 class TeacherCourseView(LoginRequiredMixin, ListView):
     model = Course
@@ -206,20 +203,21 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
             return Course.objects.none()
 
     def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST)
+        form = self.form_class(request.POST, request.FILES)
         if form.is_valid():
             course = form.save(commit=False)
             if hasattr(request.user, 'teacher'):
                 course.teacher = request.user.teacher
                 course.save()
-                form.save_m2m()  # Save the many-to-many data
+                request.user.teacher.courses_list.add(course)
 
-                # Create an agent for the course
-                learning_agents = LearningAgents(openai_api_key=settings.OPENAI_API_KEY)
-                course_agent = learning_agents.course_agent()
-                # Save the agent to the course
-                course.agent = course_agent
-                course.save()
+                # Get the selected PDFs from the form
+                selected_pdfs = request.POST.getlist('pdfs')
+
+                # Add each selected PDF to the course
+                for pdf_id in selected_pdfs:
+                    pdf = PDF.objects.get(id=pdf_id)
+                    course.pdfs.add(pdf)
 
             return redirect('teacher_courses')
         else:
@@ -238,6 +236,11 @@ def create_course(request):
             pdf_paths = []  # Replace with the actual PDF paths
             course_materials = course_agent.process_pdfs_for_course(pdf_paths)
 
+            # Associate the processed PDFs with the course
+            for material in course_materials:
+                pdf = PDF.objects.create(file=material)  # Replace with the actual PDF creation code
+                course.pdfs.add(pdf)
+
             return redirect('course_detail', course_id=course.id)
     else:
         form = CourseForm()
@@ -245,20 +248,21 @@ def create_course(request):
     return render(request, 'app/teacher_course.html', {'form': form})
 
 @login_required
-def delete_pdf(request, pdf_id):
-    pdf = get_object_or_404(PDF, id=pdf_id)
-    if request.user.is_authenticated and hasattr(request.user, 'teacher') and pdf.uploaded_by == request.user.teacher:
-        pdf.delete()
-        request.user.teacher.pdfs.remove(pdf)
-    return redirect('teacher_pdfs')
-
-def extract_text_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
-    text = ""
-    for page in doc:
-        text += page.get_text()
-    return text
-
+def delete_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    if request.user.is_authenticated:
+        if hasattr(request.user, 'teacher'):
+            if course.teacher == request.user.teacher:
+                course.delete()
+                print(f"Course {course_id} deleted.")
+            else:
+                print(f"The course's teacher is not the same as the user's teacher. Course teacher: {course.teacher}, User's teacher: {request.user.teacher}")
+        else:
+            print("The user does not have a teacher attribute.")
+    else:
+        print("The user is not authenticated.")
+    return redirect('teacher_courses')
+    
 @login_required
 def course_list(request):
     if hasattr(request.user, 'teacher'):
@@ -297,6 +301,19 @@ def enroll_in_course(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     request.user.student.courses.add(course)
     return redirect('course_detail', course_id=course.id) 
+
+@login_required
+def unenroll_course(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    student = request.user.profile.student  # Adjust this based on how your Student model is linked to User
+
+    if course in student.courses.all():
+        student.courses.remove(course)
+        messages.success(request, "You have successfully unenrolled from the course.")
+    else:
+        messages.error(request, "You are not enrolled in this course.")
+
+    return redirect('student_courses')  # Redirect to the page where courses are listed or another appropriate page.
 
 @login_required
 @require_POST
@@ -355,15 +372,78 @@ class StudentTutorView(ListView):
         else:
             return Tutor.objects.none()
 
-class StudentCourseView(ListView):
+class StudentCourseView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/student_course.html'
-    
-    def get_object(self):
-        if hasattr(self.request.user, 'student'):
-            return self.request.user.student
+
+    def post(self, request, *args, **kwargs):
+        selected_course_id = request.POST.get('course')
+        if selected_course_id:
+            course = get_object_or_404(Course, id=selected_course_id)
+            student_profile = request.user.profile.student  # This assumes that each Profile has an associated Student.
+            if course not in student_profile.courses.all():
+                student_profile.courses.add(course)  # Add the course to the student's list of enrolled courses
+                return redirect('student_courses')  # Redirect to a page showing enrolled courses
+            else:
+                return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario
+        return HttpResponseRedirect('/error') 
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
+            student_profile = self.request.user.profile.student
+            enrolled_courses = student_profile.courses.all()
+            all_courses = Course.objects.exclude(id__in=enrolled_courses.values_list('id', flat=True))
         else:
-            return redirect('student_ai_tutor')
+            all_courses = Course.objects.none()  # Show no courses if user is not authenticated or has no profile
+        context['all_courses'] = all_courses
+        return context
+
+from django.views.generic import TemplateView
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+
+@method_decorator(login_required, name='dispatch')
+class ErrorView(TemplateView):
+    template_name = 'app/error.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['message'] = "An unexpected error has occurred. Please try again."
+        return context
+
+from django.views.generic import TemplateView
+from django.utils.decorators import method_decorator
+from django.contrib.auth.decorators import login_required
+
+@method_decorator(login_required, name='dispatch')
+class AlreadyEnrolledView(TemplateView):
+    template_name = 'app/already_enrolled.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['message'] = "You are already enrolled in this course."
+        return context
+    
+from django.shortcuts import redirect, get_object_or_404
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.http import HttpResponseRedirect
+from .models import Course, Student
+
+class EnrollCourseView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        course_id = request.POST.get('course')
+        if course_id:
+            course = get_object_or_404(Course, id=course_id)
+            student_profile = request.user.profile.student
+            if course not in student_profile.courses.all():
+                student_profile.courses.add(course)
+                return redirect('student_courses')
+            else:
+                return HttpResponseRedirect('/student/already_enrolled')
+        return HttpResponseRedirect('/error')
+
 
 def stu_dashboard(request):
     return render(request, 'app/stu_dashboard.html')

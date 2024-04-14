@@ -16,9 +16,10 @@ class Profile(models.Model):
         return self.username
     
 class Student(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
     level = models.CharField(max_length=10, default='beginner')
-    list_of_courses = models.ManyToManyField('Course', related_name='students', through='LearningPath')
+    courses = models.ManyToManyField('Course', related_name='enrolled_students')
     
     def __str__(self):
         return self.profile.username
@@ -48,10 +49,13 @@ class Teacher(models.Model):
 class Course(models.Model):
     name = models.CharField(max_length=50, default='course')
     description = models.CharField(max_length=200, default='Default description')
-    progress = models.IntegerField(default=0)
     pdfs = models.ManyToManyField(PDF, blank=True, related_name='courses')
     time_created = models.DateTimeField(auto_now_add=True, null=True)
     teacher = models.ForeignKey('Teacher', on_delete=models.CASCADE, related_name='courses', default=Teacher.get_default_teacher)
+
+    @property
+    def students(self):
+        return Student.objects.filter(learningpath__course=self)
 
     def __str__(self):
         return self.name

@@ -19,16 +19,18 @@ urlpatterns = [
     path('teacher_dashboard/', views.te_dashboard, name='teacher_dashboard'),
     
     #Example for the values of database
-    path('student/course', StudentCourseView.as_view(), name='student_course'),
+    path('student/courses', StudentCourseView.as_view(), name='student_courses'),
+    path('student/already_enrolled', AlreadyEnrolledView.as_view(), name='already_enrolled'),
+    path('error', ErrorView.as_view(), name='error'),
+    path('enroll_course/', EnrollCourseView.as_view(), name='enroll_course'),
+    path('unenroll_course/<int:course_id>/', views.unenroll_course, name='unenroll_course'),
     path('teacher/courses', TeacherCourseView.as_view(), name='teacher_courses'),
     # Create course for teacher
-    path('teacher/course/create/', TeacherCourseView.as_view(), name='teacher_course_create'),
+    path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
+    path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),
     
-    path('teacher/pdfs/delete/<int:pdf_id>/', delete_pdf, name='delete_pdf'),
-    
+    path('teacher/pdfs/delete/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
-    
-    path('teacher/course/create/', CourseCreateView.as_view(), name='course_create'),
     
     path('student/profile', StudentProfileView.as_view(), name='student_profile'),
     path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),

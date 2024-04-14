@@ -49,18 +49,25 @@ Teacher Courses
                     <br>
                     <br>
                     <h4>Course List:</h4>
-                    <!-- Check if courses are empty-->
-                    {% if user.profile.teacher.courses_list %}
-                        {% for course in user.profile.teacher.courses_list.all %}
-                        <p>Course: <a href="{% url 'course_detail' course.pk %}">{{ course.name }}</a></p>
-                        <p>Progress: {{ course.progress }}</p>
-                        {% endfor %}
-                    {% endif %}
-                    <!-- Check if list is empty-->
-                    {% if user.profile.teacher.courses_list.all|length == 0 %}
-                        <p>No courses created, must upload pdfs to create course!</p>
-                    {% endif %}
-
+                    <!-- Create course list with showing different pdfs and also a button to delete a course-->
+                    {% for course in user.profile.teacher.courses_list.all %}
+                    <div>
+                        <h5>- {{ course.name }} -</h5>
+                        <p>PDFs: </p>
+                        <ul>
+                            {% for pdf in course.pdfs.all %}
+                                <li><a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                        <form method="post" action="{% url 'course_delete' course.id %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                    <br>
+                {% empty %}
+                    <p>No courses created, must upload pdfs to create course!</p>
+                {% endfor %}
                 </section>
             </div>
             <br />
@@ -102,7 +109,11 @@ Teacher Courses
                 </section>
             </div>
             <br />
-
+            <br />
+            <br />
+            <br />
+            <br />
+            <br />
         {% else %}
             <h1>Access Denied</h1>
             <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>

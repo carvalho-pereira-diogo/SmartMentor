@@ -69,9 +69,8 @@ Student Profile
           <h4>Course List:</h4>
           <!-- Check if courses are empty-->
           {% if user.profile.student.courses %}
-            {% for course in user.profile.student.list_of_courses.all %}
-            <p>Course: {{ course.name }}</p>
-            <p>Progress: {{ course.progress }}</p>
+            {% for course in user.profile.student.courses.all %}
+            <p>- {{ course.name }}</p>
             {% endfor %}
           {% else %}
             <p>No courses taken</p>

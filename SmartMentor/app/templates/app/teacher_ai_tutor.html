@@ -41,16 +41,49 @@ AI Tutor
       </div>
     </nav>
 
-        <br>
-
-        <div class="container-xl">
-            <section>
-                <h4>Welcome to the AI tutor powered by GPT</h4>
-                <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
-                <p>Talk with the bot</p>
-            </section>
-        </div>
-
+    <br />
+    <div class="container-xl">
+      <section>
+          <h4>Create a new tutor:</h4>
+          <form action="{% url 'tutor_create' %}" method="post">
+              {% csrf_token %}
+              {{ tutor_form.as_p }}
+              <input type="submit" value="Create Tutor">
+          </form>
+      </section>
+      <br/>
+  
+      <section>
+          <h4>List of Tutors:</h4>
+          {% if object_list %}
+              <table class="table">
+                  <thead>
+                      <tr>
+                          <th>Name</th>
+                          <th>Description</th>
+                          <th>Action</th>
+                      </tr>
+                  </thead>
+                  <tbody>
+                      {% for tutor in object_list %}
+                          <tr>
+                              <td>{{ tutor.name }}</td>
+                              <td>{{ tutor.description }}</td>
+                              <td>
+                                  <form action="{% url 'tutor_delete' tutor.id %}" method="post">
+                                      {% csrf_token %}
+                                      <input type="submit" value="Delete" class="btn btn-danger btn-sm">
+                                  </form>
+                              </td>
+                          </tr>
+                      {% endfor %}
+                  </tbody>
+              </table>
+          {% else %}
+              <p>No tutors created yet!</p>
+          {% endif %}
+      </section>
+  </div>
       {% else %}
       <h1>Access Denied</h1>
       <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>

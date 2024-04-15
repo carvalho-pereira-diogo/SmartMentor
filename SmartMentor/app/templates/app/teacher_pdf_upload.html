@@ -40,27 +40,7 @@ Teacher Courses
                     </div>
                 </div>
             </nav>
-
-            <br />
-            <br />
-            <div class="container-xl">
-                <section>
-                    <h4>PDF list:</h4>
-                    {% if user.teacher %}
-                        {% for pdf in user.teacher.pdfs.all %}
-                            <form method="post" action="{% url 'delete_pdf' pdf.id %}">
-                                {% csrf_token %}
-                                <p>PDF: <a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a>
-                                <button type="submit" class="btn btn-secondary btn-sm">Delete</button>
-                            </form>
-                        {% empty %}
-                            <p>No PDFs uploaded</p>
-                        {% endfor %}
-                    {% else %}
-                        <p>You must be a teacher to upload a file.</p>
-                    {% endif %}
-                </section>
-            </div>
+            
             <br />
             <div class="container-xl">
                 <section>
@@ -78,6 +58,37 @@ Teacher Courses
                 </section>
             </div>
             <br />
+            <div class="container-xl">
+                <section>
+                    <h4>PDF List:</h4>
+                    {% if user.profile.teacher.pdfs.all %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>File Name</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for pdf in user.profile.teacher.pdfs.all %}
+                                    <tr>
+                                        <td>{{ pdf.file.name }}</td>
+                                        <td>
+                                            <form method="post" action="{% url 'delete_pdf' pdf.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No PDFs uploaded yet!</p>
+                    {% endif %}
+                </section>
+            </div>
+
 
         {% else %}
             <h1>Access Denied</h1>

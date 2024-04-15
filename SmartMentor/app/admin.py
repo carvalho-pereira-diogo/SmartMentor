@@ -47,8 +47,6 @@ class QuizAdmin(admin.ModelAdmin):
     search_fields = ('name',)
 
 admin.site.register(Quiz, QuizAdmin)
-admin.site.register(QuizEnrollment)
-admin.site.register(QuizScore)
 
 class PDFAdmin(admin.ModelAdmin):
     list_display = ('file', 'uploaded_by')

@@ -1,3 +1,4 @@
+import logging
 import os
 import fitz 
 from django.conf import settings
@@ -132,26 +133,100 @@ class TeacherProfileView(LoginRequiredMixin, DetailView):
             return redirect('teacher_profile')
         
 # Create a QuizView for student and teacher
-class TeacherQuizView(ListView):
+from django.shortcuts import redirect
+from django.contrib import messages
+from django.contrib.auth.mixins import LoginRequiredMixin
+from django.views.generic import ListView
+from .models import Quiz, Course
+from .forms import SimpleQuizForm  # This form will potentially have fewer fields
+
+class TeacherQuizView(LoginRequiredMixin, ListView):
     model = Quiz
     template_name = 'app/teacher_quiz.html'
-    
-    def get_object(self):
-        if hasattr(self.request.user, 'teacher'):
-            return self.request.user.teacher
-        else:
-            return redirect('teacher_quiz')
-        
-class TeacherTutorView(LoginRequiredMixin, ListView):
-    template_name = 'app/teacher_ai_tutor.html'
+    form_class = SimpleQuizForm  # Assume this is a simplified form
+    success_url = reverse_lazy('teacher_quiz')
 
     def get_queryset(self):
-        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
+        if hasattr(self.request.user, 'teacher'):
+            return Quiz.objects.filter(teacher=self.request.user.teacher)
+        else:
+            return Quiz.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['quiz_form'] = self.form_class()  # No need to pass user here if the form is simplified
+        context['courses'] = Course.objects.filter(teacher=self.request.user.teacher)  # List courses for other UI elements maybe
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, request.FILES, user=request.user)
+        if form.is_valid():
+            quiz = form.save(commit=False)
+            quiz.teacher = request.user.teacher
+            quiz.course = form.cleaned_data['course']  # Assuming 'course' is a field in your form
+            quiz.save()
+
+            # Associate the same PDFs as in the course to the quiz
+            quiz.pdfs.set(quiz.course.pdfs.all())
+            # add quiz to teacher's quiz list
+            request.user.teacher.quiz_list.add(quiz)
+            quiz.save()
+
+            # Add the quiz to the course's quiz set
+            quiz.course.quiz_set.add(quiz)  # Change to quizzes if related_name='quizzes' is used
+
+            messages.success(request, "Quiz created successfully!")
+            return redirect(self.success_url)
+        else:
+            return render(request, self.template_name, {'form': form, 'object_list': self.get_queryset(), 'errors': form.errors})
+
+def delete_quiz(request, quiz_id):
+    quiz = get_object_or_404(Quiz, id=quiz_id)
+    if request.user.is_authenticated and hasattr(request.user, 'teacher') and quiz.teacher == request.user.teacher:
+        quiz.delete()
+        request.user.teacher.quiz_list.remove(quiz)
+    return redirect('teacher_quiz')
+
+class TeacherTutorView(LoginRequiredMixin, ListView):
+    model = Tutor
+    template_name = 'app/teacher_ai_tutor.html'
+    form_class = SimpleTutorForm  # Assume this is a simplified form
+    success_url = reverse_lazy('teacher_ai_tutor')
+
+    def get_queryset(self):
         if hasattr(self.request.user, 'teacher'):
             return Tutor.objects.filter(teacher=self.request.user.teacher)
         else:
             return Tutor.objects.none()
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        context['tutor_form'] = self.form_class()  # No need to pass user here if the form is simplified
+        return context
+
+    def post(self, request, *args, **kwargs):
+        form = self.form_class(request.POST, request.FILES)
+        if form.is_valid():
+            tutor = form.save(commit=False)
+            tutor.teacher = request.user.teacher
+            tutor.save()
+
+            # add tutor to teacher's tutor list
+            request.user.teacher.tutor_list.add(tutor)
+            tutor.save()
+
+            messages.success(request, "Tutor created successfully!")
+            return redirect(self.success_url)
+        else:
+            return render(request, self.template_name, {'form': form, 'object_list': self.get_queryset(), 'errors': form.errors})
         
+
+def delete_tutor(request, tutor_id):
+    tutor = get_object_or_404(Tutor, id=tutor_id)
+    if request.user.is_authenticated and hasattr(request.user, 'teacher') and tutor.teacher == request.user.teacher:
+        tutor.delete()
+        request.user.teacher.tutor_list.remove(tutor)
+    return redirect('teacher_ai_tutor')
 class TeacherPDFView(LoginRequiredMixin, ListView):
     model = PDF
     form_class = PDFUploadForm
@@ -295,15 +370,9 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
         
 # Change the JSONresponse to a redirection to somewhere in the webapp
         
-@login_required
-@require_POST
-def enroll_in_course(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    request.user.student.courses.add(course)
-    return redirect('course_detail', course_id=course.id) 
 
 @login_required
-def unenroll_course(request, course_id):
+def quiz(request, course_id):
     course = get_object_or_404(Course, id=course_id)
     student = request.user.profile.student  # Adjust this based on how your Student model is linked to User
 
@@ -316,15 +385,48 @@ def unenroll_course(request, course_id):
     return redirect('student_courses')  # Redirect to the page where courses are listed or another appropriate page.
 
 @login_required
-@require_POST
-def enroll_in_quiz(request, quiz_id):
+def unenroll_quiz(request, quiz_id):  # Add the quiz_id parameter here
+    # Assuming Student model has a 'quizzes' many-to-many field with Quiz
+    student_profile = request.user.profile.student
     quiz = get_object_or_404(Quiz, id=quiz_id)
-    student = get_object_or_404(Student, profile__user=request.user)
-    # Use the QuizAgent to do something
-    quiz_agent = learning_agents.quiz_agent()
-    # quiz_agent.do_something()
 
-    return redirect('quiz_detail', quiz_id=quiz.id)
+    if quiz in student_profile.quizzes.all():
+        student_profile.quizzes.remove(quiz)
+
+    return redirect('student_quiz')  # Redirect to an appropriate view after unenrollment
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Tutor, Student
+
+@login_required
+def unenroll_tutor(request, tutor_id):  # Function to handle unenrollment
+    student_profile = request.user.profile.student  # Access the student profile
+    tutor = get_object_or_404(Tutor, id=tutor_id)  # Get the tutor instance
+
+    # Check if the student is enrolled in the tutor and remove if they are
+    if tutor in student_profile.tutors.all():
+        student_profile.tutors.remove(tutor)
+
+    return redirect('student_ai_tutor')  # Redirect to a view showing all tutors for the student
+ # Redirect to the page where courses are listed or another appropriate page.
+
+
+from django.shortcuts import get_object_or_404, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Quiz, Student
+
+@login_required
+@login_required
+def unenroll_course(request, course_id):  # Change 'quiz_id' to 'course_id'
+    student_profile = request.user.profile.student
+    course = get_object_or_404(Course, id=course_id)  # Change 'Quiz' to 'Course'
+
+    if course in student_profile.courses.all():
+        student_profile.courses.remove(course)
+
+    return redirect('student_courses')  # Redirect to an appropriate view after unenrollment Redirect to an appropriate view after unenrollment
+
 
 @login_required
 @require_POST
@@ -350,28 +452,65 @@ def submit_quiz(request, quiz_id):
     return render(request, 'app/quiz_result.html', {'learning_path': learning_path})
 
         
-class StudentQuizView(ListView):
-    template_name = 'app/student_ai_tutor.html'
-
-    def get_queryset(self):
-        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
-        if hasattr(self.request.user, 'student'):
-            return Tutor.objects.filter(student=self.request.user.student)
-        else:
-            return Tutor.objects.none()
-        
-class StudentTutorView(ListView):
-
-    model = Course
-    template_name = 'app/student_ai_tutor.html'
+class StudentQuizView(LoginRequiredMixin, ListView):
+    model = Quiz
+    template_name = 'app/student_quiz.html'
     
-    def get_queryset(self):
-        # Override this method to return a QuerySet of Tutor objects that belong to the current user's Teacher instance
-        if hasattr(self.request.user, 'student'):
-            return Tutor.objects.filter(teacher=self.request.user.student)
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
+            student_profile = self.request.user.profile.student
+            enrolled_quizzes = student_profile.quizzes.all()
+            all_quizzes = Quiz.objects.exclude(id__in=enrolled_quizzes.values_list('id', flat=True))
         else:
-            return Tutor.objects.none()
+            all_quizzes = Quiz.objects.none()  # Show no quizzes if user is not authenticated or has no profile
+        context['all_quizzes'] = all_quizzes
+        context['form'] = QuizEnrollmentForm(user=self.request.user)
+        return context
 
+    def post(self, request, *args, **kwargs):
+        selected_quiz_id = request.POST.get('quiz')
+        print(f"Selected quiz ID: {selected_quiz_id}")  # Debug print
+        if selected_quiz_id:
+            quiz = get_object_or_404(Quiz, id=selected_quiz_id)
+            print(f"Quiz: {quiz}")  # Debug print
+            student_profile = request.user.profile.student
+            if quiz not in student_profile.quizzes.all():
+                student_profile.quizzes.add(quiz)  # Add the quiz to the student's list of enrolled quizzes
+                print(f"Enrolled quizzes after enrollment: {student_profile.quizzes.all()}")  # Debug print
+                return HttpResponseRedirect('.')  # Redirect to the current URL
+            else:
+                return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario
+        return HttpResponseRedirect('/error') 
+    
+class StudentTutorView(LoginRequiredMixin, ListView):
+    model = Tutor
+    template_name = 'app/student_ai_tutor.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile') and hasattr(self.request.user.profile, 'student'):
+            student_profile = self.request.user.profile.student
+            enrolled_tutors = student_profile.tutors.all()
+            all_tutors = Tutor.objects.exclude(id__in=enrolled_tutors.values_list('id', flat=True))
+        else:
+            all_tutors = Tutor.objects.none()  # Show no tutors if user is not authenticated or has no student profile
+        context['all_tutors'] = all_tutors
+        context['enrolled_tutors'] = enrolled_tutors
+        context['form'] = TutorEnrollmentForm(user=self.request.user)  # Adjust form as necessary
+        return context
+
+    def post(self, request, *args, **kwargs):
+        selected_tutor_id = request.POST.get('tutor')
+        if selected_tutor_id:
+            tutor = get_object_or_404(Tutor, id=selected_tutor_id)
+            student_profile = request.user.profile.student
+            if tutor not in student_profile.tutors.all():
+                student_profile.tutors.add(tutor)  # Add the tutor to the student's list of enrolled tutors
+                return HttpResponseRedirect('.')  # Redirect to the current URL
+            else:
+                return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario
+        return HttpResponseRedirect('/error')
 class StudentCourseView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/student_course.html'
@@ -422,7 +561,7 @@ class AlreadyEnrolledView(TemplateView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['message'] = "You are already enrolled in this course."
+        context['message'] = "You are already enrolled."
         return context
     
 from django.shortcuts import redirect, get_object_or_404
@@ -444,6 +583,59 @@ class EnrollCourseView(LoginRequiredMixin, View):
                 return HttpResponseRedirect('/student/already_enrolled')
         return HttpResponseRedirect('/error')
 
+
+from django.shortcuts import redirect, get_object_or_404
+from django.http import HttpResponseRedirect
+from django.views import View
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Quiz, Student  # Ensure these are correctly imported
+
+from django.contrib.auth.decorators import login_required
+
+class EnrollQuizView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs): # Check authentication
+        quiz_id = request.POST.get('quiz_id')
+        
+        if not quiz_id:
+            return HttpResponseRedirect('/error')  # Log and redirect to error
+
+        quiz = get_object_or_404(Quiz, id=quiz_id)
+        student_profile = request.user.profile.student
+        if quiz in student_profile.quizzes.all():
+            return HttpResponseRedirect('/student/already_enrolled')
+
+        student_profile.quizzes.add(quiz)
+        return redirect('student_quiz')
+    
+from django.views import View
+from django.shortcuts import get_object_or_404, redirect
+from django.http import HttpResponseRedirect
+from django.contrib.auth.mixins import LoginRequiredMixin
+from .models import Tutor
+
+class EnrollTutorView(LoginRequiredMixin, View):
+    def post(self, request, *args, **kwargs):
+        print("User authenticated:", request.user.is_authenticated)
+        tutor_id = request.POST.get('tutor_id')
+        print("Tutor ID received:", tutor_id)
+
+        if not tutor_id:
+            print("No tutor ID provided.")
+            return HttpResponseRedirect('/error')
+
+        tutor = get_object_or_404(Tutor, id=tutor_id)
+        student_profile = request.user.profile.student
+        print("Attempting to enroll in tutor:", tutor.name)
+
+        if tutor in student_profile.tutors.all():
+            print("Already enrolled with this tutor.")
+            return HttpResponseRedirect('/student/already_enrolled')
+
+        student_profile.tutors.add(tutor)
+        print("Enrollment successful.")
+        return redirect('student_ai_tutor')
+
+    
 
 def stu_dashboard(request):
     return render(request, 'app/stu_dashboard.html')

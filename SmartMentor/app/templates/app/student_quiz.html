@@ -31,28 +31,62 @@ Student Quiz
                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
                   {% csrf_token %}
                   <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+              </form>
+              
               </li>
           </div>
         </div>
       </nav>
 
-        <br>
 
-        <div class="container-xl">
-          <section>
-              <h4>Student Quizzes List</h4>
-              <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
-              <p>Here, you access for the different Quizzes</p>
-          </section>
-      </div>
+      <div class="container-xl">
+        <section>
+            <h4>Available Quizzes</h4>
+            <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
+            <p>Here, you can enroll in different quizzes.</p>
+            <form method="post" action="{% url 'enroll_quiz' %}">
+              {% csrf_token %}
+              <select id="quiz" name="quiz_id">
+                  {% for quiz in all_quizzes %}
+                      <option value="{{ quiz.id }}">{{ quiz.name }}</option>
+                  {% endfor %}
+              </select>
+              <input type="submit" value="Enroll">
+          </form>
+          
+        </section>
+    </div>
 
-      {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-  {% endif %}
-  {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
-  {% endif %}
+    <br>
+
+    <div class="container-xl">
+        <section>
+            <h4>Enrolled Quizzes</h4>
+            <p>Here are the quizzes you have enrolled in:</p>
+            <ul>
+                {% for quiz in user.profile.student.quizzes.all %}
+                    <li>
+                        {{ quiz.name }}
+                        <!-- Unenroll Form -->
+                        <form method="post" action="{% url 'unenroll_quiz' quiz.id %}">
+                          {% csrf_token %}
+                          <button type="submit">Unenroll</button>
+                      </form>
+                    </li>
+                {% endfor %}
+            </ul>
+        </section>
+    </div>
+
+    <br>
+
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
+{% endif %}
+{% else %}
+<h1>Access Denied</h1>
+<p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+{% endif %}
 
 {% endblock %}

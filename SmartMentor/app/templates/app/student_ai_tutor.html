@@ -31,28 +31,58 @@ AI Tutor
               <form action="{% url 'logout' %}" method="post" style="margin: 0">
                 {% csrf_token %}
                 <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-            </li>
+            </form>
+           </li>
         </div>
       </div>
     </nav>
 
-        <br>
+    <div class="container-xl">
+      <section>
+          <h4>Available Tutors</h4>
+          <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
+          <p>Here, you can enroll in different tutors.</p>
+          <form method="post" action="{% url 'enroll_ai_tutor' %}">
+            {% csrf_token %}
+            <select id="tutor" name="tutor_id">
+                {% for tutor in all_tutors %}
+                    <option value="{{ tutor.id }}">{{ tutor.name }}</option>
+                {% endfor %}
+            </select>
+            <input type="submit" value="Enroll">
+        </form>
+        
+      </section>
+  </div>
+  
+  <br>
+  
+  <div class="container-xl">
+      <section>
+          <h4>Enrolled Tutors</h4>
+          <p>Here are the tutors you have enrolled in:</p>
+          <ul>
+              {% for tutor in enrolled_tutors %}
+                  <li>
+                      {{ tutor.name }}
+                      <!-- Unenroll Form -->
+                      <form method="post" action="{% url 'unenroll_ai_tutor' tutor.id %}">
+                          {% csrf_token %}
+                          <button type="submit">Unenroll</button>
+                      </form>
+                  </li>
+              {% endfor %}
+          </ul>
+      </section>
+  </div>
 
-        <div class="container-xl">
-          <section>
-              <h4>Welcome to the AI tutor powered by GPT</h4>
-              <p>Welcome, {{ user.profile.fname}} {{ user.profile.lname }}</p>
-              <p>Talk with the bot</p>
-          </section>
-      </div>
-
-      {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-  {% endif %}
-  {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
-  {% endif %}
+{% else %}
+  <h1>Access Denied</h1>
+  <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
+{% endif %}
+{% else %}
+<h1>Access Denied</h1>
+<p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+{% endif %}
 
 {% endblock %}

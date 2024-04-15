@@ -108,6 +108,33 @@ AI Tutor
   </div>
 
 
+  <!-- Section for the start of communication with a agent, creation of a link that opens a new tab to talk with the agent-->
+  <!-- Create a table for different link to access the agent -->
+  <br>
+
+  <div class="container-xl">
+    <section>
+      <h4>Start Communication</h4>
+      <p>Here are the links to start communication with the tutors you have enrolled in:</p>
+      <table class="table table-striped">
+        <thead>
+          <tr>
+            <th>Tutor Name</th>
+            <th>Link</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for tutor in enrolled_tutors %}
+            <tr>
+              <td>{{ tutor.name }}</td>
+              <td><a href="{% url 'chat' tutor.id %}" target="_blank">Tutor Chatbot</a></td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </section>
+  </div>
+
   <br>
   <br>
   <br>

@@ -45,6 +45,7 @@ urlpatterns = [
     path('teacher/quiz/delete/<int:quiz_id>/', views.delete_quiz, name='quiz_delete'),
 
     path('student/ai_tutor', StudentTutorView.as_view(), name='student_ai_tutor'),
+    path('student/ai_tutor/chat/<int_tutor_id>', StudentTutorView.as_view(), name='chat'),
     path('enroll_tutor/', EnrollTutorView.as_view(), name='enroll_ai_tutor'),
     path('unenroll_tutor/<int:tutor_id>/', views.unenroll_tutor, name='unenroll_ai_tutor'),
     path('teacher/ai_tutor', TeacherTutorView.as_view(), name='teacher_ai_tutor'),

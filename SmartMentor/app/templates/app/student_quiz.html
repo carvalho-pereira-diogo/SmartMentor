@@ -38,22 +38,39 @@ Student Quiz
         </div>
       </nav>
 
+      <br/>
 
       <div class="container-xl">
         <section>
             <h4>Available Quizzes</h4>
             <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
             <p>Here, you can enroll in different quizzes.</p>
-            <form method="post" action="{% url 'enroll_quiz' %}">
-              {% csrf_token %}
-              <select id="quiz" name="quiz_id">
-                  {% for quiz in all_quizzes %}
-                      <option value="{{ quiz.id }}">{{ quiz.name }}</option>
-                  {% endfor %}
-              </select>
-              <input type="submit" value="Enroll">
-          </form>
-          
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Quiz Name</th>
+                        <th>Description</th>
+                        <th>Course</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quiz in all_quizzes %}
+                        <tr>
+                            <td>{{ quiz.name }}</td>
+                            <td>{{ quiz.description }}</td>
+                            <td>{{ quiz.course.name }}</td>
+                            <td>
+                                <form method="post" action="{% url 'enroll_quiz' %}">
+                                    {% csrf_token %}
+                                    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
+                                    <input type="submit" class="btn btn-warning" value="Enroll">
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </section>
     </div>
 
@@ -63,21 +80,39 @@ Student Quiz
         <section>
             <h4>Enrolled Quizzes</h4>
             <p>Here are the quizzes you have enrolled in:</p>
-            <ul>
-                {% for quiz in user.profile.student.quizzes.all %}
-                    <li>
-                        {{ quiz.name }}
-                        <!-- Unenroll Form -->
-                        <form method="post" action="{% url 'unenroll_quiz' quiz.id %}">
-                          {% csrf_token %}
-                          <button type="submit">Unenroll</button>
-                      </form>
-                    </li>
-                {% endfor %}
-            </ul>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>Quiz Name</th>
+                        <th>Description</th>
+                        <th>Course</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for quiz in enrolled_quizzes %}
+                        <tr>
+                            <td>{{ quiz.name }}</td>
+                            <td>{{ quiz.description }}</td>
+                            <td>{{ quiz.course.name }}</td>
+                            <td>
+                                <form method="post" action="{% url 'unenroll_quiz' quiz.id %}">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">Unenroll</button>
+                                </form>
+                            </td>
+                        </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
         </section>
     </div>
-
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
     <br>
 
 {% else %}

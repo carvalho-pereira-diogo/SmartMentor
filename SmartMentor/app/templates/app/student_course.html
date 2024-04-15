@@ -28,7 +28,7 @@ Courses
                                 <a class="nav-link" href="{% url 'student_ai_tutor' %}">Tutor</a>
                             </li>
                             <li class="nav-item">
-                                <form action="{% url 'logout' %}" method="post" style="margin: 0;">
+                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
                                     {% csrf_token %}
                                     <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
                                 </form>
@@ -42,44 +42,74 @@ Courses
 
             <div class="container-xl">
                 <section>
-                    <h4>Student Course List</h4>
+                    <h4>Available Courses</h4>
                     <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
-                    <p>Here, you can access different courses.</p>
-                    <form method="post" action="{% url 'enroll_course' %}">
-                        {% csrf_token %}
-                        <label for="course">Select a course:</label>
-                        <select id="course" name="course">
+                    <p>Here, you can enroll in different courses.</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Course Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
                             {% for course in all_courses %}
-                                <option value="{{ course.id }}">{{ course.name }}</option>
+                                <tr>
+                                    <td>{{ course.name }}</td>
+                                    <td>{{ course.description }}</td>
+                                    <td>
+                                        <form method="post" action="{% url 'enroll_course' %}">
+                                            {% csrf_token %}
+                                            <input type="hidden" name="course_id" value="{{ course.id }}">
+                                            <input type="submit" class="btn btn-warning" value="Enroll">
+                                        </form>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                        </select>
-                        <input type="submit" value="Enroll">
-                    </form>
+                        </tbody>
+                    </table>
                 </section>
             </div>
-
+        
             <br>
-
+        
             <div class="container-xl">
                 <section>
                     <h4>Enrolled Courses</h4>
                     <p>Here are the courses you have enrolled in:</p>
-                    <ul>
-                        {% for course in user.profile.student.courses.all %}
-                            <li>
-                                {{ course.name }}
-                                <!-- Unenroll Form -->
-                                <form method="post" action="{% url 'unenroll_course' course.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning">Unenroll</button>
-                                </form>
-                            </li>
-                        {% endfor %}
-                    </ul>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Course Name</th>
+                                <th>Description</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in user.profile.student.courses.all %}
+                                <tr>
+                                    <td>{{ course.name }}</td>
+                                    <td>{{ course.description }}</td>
+                                    <td>
+                                        <form method="post" action="{% url 'unenroll_course' course.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-warning">Unenroll</button>
+                                        </form>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
                 </section>
             </div>
-
             <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
+    <br>
 
         {% else %}
             <h1>Access Denied</h1>

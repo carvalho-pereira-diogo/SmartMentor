@@ -37,21 +37,39 @@ AI Tutor
       </div>
     </nav>
 
+    <br/>
+
     <div class="container-xl">
       <section>
           <h4>Available Tutors</h4>
           <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
           <p>Here, you can enroll in different tutors.</p>
-          <form method="post" action="{% url 'enroll_ai_tutor' %}">
-            {% csrf_token %}
-            <select id="tutor" name="tutor_id">
-                {% for tutor in all_tutors %}
-                    <option value="{{ tutor.id }}">{{ tutor.name }}</option>
-                {% endfor %}
-            </select>
-            <input type="submit" value="Enroll">
-        </form>
-        
+          <table class="table table-striped">
+              <thead>
+                  <tr>
+                      <th>Tutor Name</th>
+                      <th>Description</th>
+                      <th>Course</th>
+                      <th>Action</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {% for tutor in all_tutors %}
+                      <tr>
+                          <td>{{ tutor.name }}</td>
+                          <td>{{ tutor.description }}</td>
+                          <td>{{ tutor.course.name }}</td>
+                          <td>
+                              <form method="post" action="{% url 'enroll_ai_tutor' %}">
+                                  {% csrf_token %}
+                                  <input type="hidden" name="tutor_id" value="{{ tutor.id }}">
+                                  <input type="submit" class="btn btn-warning" value="Enroll">
+                              </form>
+                          </td>
+                      </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
       </section>
   </div>
   
@@ -61,20 +79,42 @@ AI Tutor
       <section>
           <h4>Enrolled Tutors</h4>
           <p>Here are the tutors you have enrolled in:</p>
-          <ul>
-              {% for tutor in enrolled_tutors %}
-                  <li>
-                      {{ tutor.name }}
-                      <!-- Unenroll Form -->
-                      <form method="post" action="{% url 'unenroll_ai_tutor' tutor.id %}">
-                          {% csrf_token %}
-                          <button type="submit">Unenroll</button>
-                      </form>
-                  </li>
-              {% endfor %}
-          </ul>
+          <table class="table table-striped">
+              <thead>
+                  <tr>
+                      <th>Tutor Name</th>
+                      <th>Description</th>
+                      <th>Course</th>
+                      <th>Action</th>
+                  </tr>
+              </thead>
+              <tbody>
+                  {% for tutor in enrolled_tutors %}
+                      <tr>
+                          <td>{{ tutor.name }}</td>
+                          <td>{{ tutor.description }}</td>
+                          <td>{{ tutor.course.name }}</td>
+                          <td>
+                              <form method="post" action="{% url 'unenroll_ai_tutor' tutor.id %}">
+                                  {% csrf_token %}
+                                  <button type="submit" class="btn btn-warning">Unenroll</button>
+                              </form>
+                          </td>
+                      </tr>
+                  {% endfor %}
+              </tbody>
+          </table>
       </section>
   </div>
+
+
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
+  <br>
 
 {% else %}
   <h1>Access Denied</h1>

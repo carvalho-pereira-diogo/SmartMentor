@@ -465,6 +465,7 @@ class StudentQuizView(LoginRequiredMixin, ListView):
         else:
             all_quizzes = Quiz.objects.none()  # Show no quizzes if user is not authenticated or has no profile
         context['all_quizzes'] = all_quizzes
+        context['enrolled_quizzes'] = enrolled_quizzes
         context['form'] = QuizEnrollmentForm(user=self.request.user)
         return context
 
@@ -536,6 +537,7 @@ class StudentCourseView(LoginRequiredMixin, ListView):
         else:
             all_courses = Course.objects.none()  # Show no courses if user is not authenticated or has no profile
         context['all_courses'] = all_courses
+        context['enrolled_courses'] = enrolled_courses
         return context
 
 from django.views.generic import TemplateView
@@ -572,7 +574,7 @@ from .models import Course, Student
 
 class EnrollCourseView(LoginRequiredMixin, View):
     def post(self, request, *args, **kwargs):
-        course_id = request.POST.get('course')
+        course_id = request.POST.get('course_id')  # Change 'course' to 'course_id'
         if course_id:
             course = get_object_or_404(Course, id=course_id)
             student_profile = request.user.profile.student

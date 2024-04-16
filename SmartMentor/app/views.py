@@ -716,23 +716,39 @@ def chat_with_tutor(request, tutor_id):
 import openai
 from django.conf import settings
 
+# Set the API key from Django settings
 openai.api_key = settings.OPENAI_API_KEY
 
-def get_ai_response(user_message):
-    #try:
-       # response = openai.Completion.create(
-        #    engine="text-davinci-003",  # Updated to a newer engine version
-         #   prompt=user_message,
-          #  max_tokens=150,
-           # temperature=0.7
-        #)
-        #return response['choices'][0]['text'].strip()
-    #except Exception as e:
-        print("Error accessing OpenAI:", str(e))
+import openai
+from django.conf import settings
+
+# Set the API key from Django settings
+openai.api_key = settings.OPENAI_API_KEY
+
+from openai import OpenAI
+client = OpenAI(api_key=settings.OPENAI_API_KEY)
+
+def get_ai_response(prompt, report = None):
+    try:
+        # Prepare the conversation context with system and previous chat history if needed
+        system_prompt = {
+            "role":  "system", 
+            "content": "You are a assistant chatbot helping students with their queries. You are a teacher explaining a concept to a student. As a python tutor, you are helping a student with a coding problem and simple theoretical questions. Python programming assistant chatbot. Important= Everything else that is not included inside the topic gets deleted. Always ask if student has understood it. Your student information: "+report+" -base the information on it. In case of asking for report return the report of student" }
+        
+        user_prompt = {"role": "user", "content": prompt}
+
+        # Using the Completion method with conversation context
+        chat_completion = client.chat.completions.create(
+            model="gpt-3.5-turbo",  # Adjust this to the latest available model, if different
+            messages=[system_prompt, user_prompt],  # Combine prompts for context
+            max_tokens=150,
+            top_p=0.9
+        )
+        # Extracting the response text from the latest API response structure
+        return chat_completion.choices[0].message.content.strip()  # Adjust accessing the content
+    except Exception as e:
+        print(f"Error accessing OpenAI: {str(e)}")
         return "There was an error processing your request."
-
-
-
 
 
 import json
@@ -742,15 +758,23 @@ from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 from django.conf import settings
 
-openai.api_key = settings.OPENAI_API_KEY
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
 
 @csrf_exempt
 @require_POST
 def send_message(request):
+    #get student 
+    student = request.user.profile.student
+    #get selected tutor
+    student_rep = student_report(student)
+    
     try:
-        data = json.loads(request.body)
+        data = json.loads(request.body,)  # Parsing the JSON body of the POST request
         user_message = data.get('message')
-        response_message = get_ai_response(user_message)
+        response_message = get_ai_response(user_message, student_rep)  # Fetching the AI response
         return JsonResponse({'reply': response_message})
     except json.JSONDecodeError as e:
         return JsonResponse({'error': 'Invalid JSON', 'details': str(e)}, status=400)
@@ -758,3 +782,9 @@ def send_message(request):
         return JsonResponse({'error': 'OpenAI API error', 'details': str(e)}, status=500)
 
 
+# Create me a function that creates a small report about the student profile
+# The report should include the student's name, role, and level (if applicable)
+def student_report(student):
+    # put name role level
+    report = f"Name: {student.profile.fname} {student.profile.lname}, Role: {student.profile.role}, Level: {student.level}"
+    return report

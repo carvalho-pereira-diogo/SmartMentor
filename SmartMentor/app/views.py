@@ -786,5 +786,5 @@ def send_message(request):
 # The report should include the student's name, role, and level (if applicable)
 def student_report(student):
     # put name role level
-    report = f"Name: {student.profile.fname} {student.profile.lname}, Role: {student.profile.role}, Level: {student.level}"
+    report = f"Name: {student.profile.fname} {student.profile.lname}, Role: {student.profile.role},"
     return report

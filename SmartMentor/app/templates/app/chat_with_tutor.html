@@ -1,0 +1,23 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Chat with {{ tutor.name }}
+{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <h1>Chat with {{ tutor.name }}</h1>
+    <div id="chat-container">
+        <!-- Display the introduction message as the first chat message -->
+        <div id="messages" style="height: 300px; overflow-y: scroll; background-color: #f7f7f7; padding: 10px; border: 1px solid #ccc;">
+            <div>{{ introduction }}</div>
+        </div>
+        <input type="text" id="message-input" placeholder="Type your message here..." style="width: 100%; padding: 10px; margin-top: 5px;">
+        <button id="send-button">Send</button>
+    </div>
+</div>
+
+{% load static %}
+<script src="{% static 'js/chat.js' %}"></script>
+{% endblock %}
+

@@ -68,32 +68,21 @@ class LearningAgents():
 
         return agent
 
-    def tutor_agent(self):
+    def tutor_agent(self, tutor):
+        tools = TutorToolset.tools() + PDFToolset.tools()
+        print("Debug - Tools List:", tools)  # This will show what's being passed as tools
+        if not all(callable(tool) for tool in tools):
+            raise ValueError("All tools must be callable")
+        
         agent = Agent(
             role="Tutor (Chatbot) Agent",
-            goal=dedent("""\
-                Provide real-time tutoring and assistance, answering queries and offering guidance through the learning material.
-            """),
-            tools=TutorToolset.tools() + PDFToolset.tools(),
-            backstory=dedent("""\
-                The Tutor Agent leverages advanced NLP techniques to understand and respond to user queries, offering a personalized tutoring experience.
-            """),
+            goal=f"Provide tutoring based on the materials and expertise of {tutor.name}.",
+            tools=tools,
+            backstory=f"The Tutor Agent uses resources from {tutor.name} to tailor the tutoring experience.",
             verbose=True
         )
-
-        def process_pdfs_for_tutoring(pdf_paths: list):
-            resources = []
-            for pdf_path in pdf_paths:
-                text_content = PDFToolset.extract_text(pdf_path)
-                # Assuming a method exists to create tutoring content from text
-                resource = TutorToolset.create_tutoring_resource(content=text_content)
-                resources.append(resource)
-            return resources
-
-        # Attach the method to the agent instance
-        agent.process_pdfs_for_tutoring = process_pdfs_for_tutoring
-
         return agent
+
 
     def user_profile_agent(self):
         return Agent(

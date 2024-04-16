@@ -1,6 +1,8 @@
 import logging
 import os
 import fitz 
+import json
+import openai
 from django.conf import settings
 from django.shortcuts import get_object_or_404, render, redirect
 from django.http import FileResponse, Http404, HttpResponse, HttpResponseNotFound, HttpResponseRedirect, JsonResponse
@@ -259,12 +261,19 @@ def delete_pdf(request, pdf_id):
         request.user.teacher.pdfs.remove(pdf)
     return redirect('teacher_pdfs')
 
+import fitz  # PyMuPDF
+
 def extract_text_from_pdf(pdf_path):
     doc = fitz.open(pdf_path)
-    text = ""
+    text = ''
     for page in doc:
         text += page.get_text()
+    doc.close()
+    print("Extracted Text:", text)  # Debug output
     return text
+
+# Adjust this example as necessary based on your actual implementation.
+
 
 class TeacherCourseView(LoginRequiredMixin, ListView):
     model = Course
@@ -644,3 +653,108 @@ def stu_dashboard(request):
 
 def te_dashboard(request):
     return render(request, 'app/te_dashboard.html')
+
+
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+
+from django.shortcuts import redirect, get_object_or_404
+from django.contrib import messages
+from django.http import HttpResponse
+from .models import Tutor
+from .agents import LearningAgents
+
+def tutor_view(request, tutor_id):
+    try:
+        tutor = Tutor.objects.get(pk=tutor_id)
+        learning_agents = LearningAgents(openai_api_key='your_openai_api_key_here')
+        tutor_agent = learning_agents.tutor_agent(tutor)
+        resources = tutor_agent.process_pdfs_for_tutoring()
+
+        # Assuming resources are serialized or summarized for session storage:
+        request.session['tutor_resources'] = [resource.summary() for resource in resources]  # This assumes each resource has a summary method
+
+        # Redirect to a view where these resources are used
+        # Example: redirect to a resource display view
+        return redirect('display_resources', tutor_id=tutor.id)
+    except Tutor.DoesNotExist:
+        messages.error(request, "Tutor not found")
+        return redirect('error_view')  # Redirect to an error page or appropriate action
+    except Exception as e:
+        messages.error(request, f"An error occurred: {str(e)}")
+        return redirect('error_view')  # Redirect to an error page or appropriate action
+
+def display_resources_view(request, tutor_id):
+    resources = request.session.get('tutor_resources', [])
+    if not resources:
+        messages.error(request, "No resources found or session expired.")
+        return redirect('some_default_view')
+
+    return HttpResponse('<br>'.join(resources))  # Display resources; customize as needed
+
+def error_view(request):
+    return render(request, 'app/error.html', {'error_message': 'A generic error occurred.'})
+
+
+from django.shortcuts import render, get_object_or_404
+from .models import Tutor
+
+def chat_with_tutor(request, tutor_id):
+    tutor = get_object_or_404(Tutor, pk=tutor_id)
+    
+    # Example static introduction
+    introduction = f"Hello, I am {tutor.name}, your personal tutor assistant. How can I assist you today?"
+
+    # If you have more dynamic content, you might fetch or generate it here
+    
+    context = {
+        'tutor': tutor,
+        'introduction': introduction,
+    }
+    return render(request, 'app/chat_with_tutor.html', context)
+
+import openai
+from django.conf import settings
+
+openai.api_key = settings.OPENAI_API_KEY
+
+def get_ai_response(user_message):
+    #try:
+       # response = openai.Completion.create(
+        #    engine="text-davinci-003",  # Updated to a newer engine version
+         #   prompt=user_message,
+          #  max_tokens=150,
+           # temperature=0.7
+        #)
+        #return response['choices'][0]['text'].strip()
+    #except Exception as e:
+        print("Error accessing OpenAI:", str(e))
+        return "There was an error processing your request."
+
+
+
+
+
+import json
+import openai
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.http import require_POST
+from django.conf import settings
+
+openai.api_key = settings.OPENAI_API_KEY
+
+@csrf_exempt
+@require_POST
+def send_message(request):
+    try:
+        data = json.loads(request.body)
+        user_message = data.get('message')
+        response_message = get_ai_response(user_message)
+        return JsonResponse({'reply': response_message})
+    except json.JSONDecodeError as e:
+        return JsonResponse({'error': 'Invalid JSON', 'details': str(e)}, status=400)
+    except Exception as e:
+        return JsonResponse({'error': 'OpenAI API error', 'details': str(e)}, status=500)
+
+

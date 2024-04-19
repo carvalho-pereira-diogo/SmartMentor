@@ -30,6 +30,7 @@ urlpatterns = [
     # Create course for teacher
     path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
     path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),
+    path('course/<int:course_id>/interactive/', views.course_view, name='interactive_learning'),
     
     path('teacher/pdfs/delete/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),

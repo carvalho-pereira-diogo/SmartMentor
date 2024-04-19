@@ -1,0 +1,49 @@
+{% extends "app/base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Course Details: {{ course.name }}</h1>
+    <p><strong>Description:</strong> {{ course.description }}</p>
+
+    {% if student_report %}
+    <div class="student-report">
+        <h2>Student Report</h2>
+        <p>{{ student_report }}</p>
+    </div>
+    {% endif %}
+
+    {% if ai_response %}
+    <div class="ai-response">
+        <h2>AI Tutor's Advice</h2>
+        <p id="aiResponse">{{ ai_response }}</p>
+    </div>
+    {% endif %}
+
+<!-- Form to ask a question to the AI Tutor -->
+<form method="POST" action="{% url 'course_view' course.id %}">
+    {% csrf_token %}
+    <div class="form-group">
+        <label for="promptInput">Ask the AI Tutor a question:</label>
+        <input type="text" id="promptInput" name="prompt" class="form-control" placeholder="Enter your question here...">
+        <button type="submit" class="btn btn-primary">Submit</button>
+    </div>
+</form>
+
+<form method="POST" action="{% url 'course_view' course.id %}">
+    {% csrf_token %}
+    <input type="hidden" name="action" value="generate_course">
+    <button type="submit" class="btn btn-info">Generate Course Content</button>
+</form>
+
+
+
+
+
+    <button class="btn btn-info" onclick="getMoreInfo()">Request More Information</button>
+    <button class="btn btn-success" onclick="nextTopic()">Move to Next Topic</button>
+
+    <div id="courseMaterial">
+        <!-- This div will be populated by fetched content -->
+    </div>
+</div>
+{% endblock %}

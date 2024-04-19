@@ -27,11 +27,7 @@ from django.core.management.base import BaseCommand
 from django.views.decorators.http import require_POST
 from .models import *
 from .forms import *
-from .agents import LearningAgents
-from .tools import *
-from .tasks import *
 
-learning_agents = LearningAgents(openai_api_key='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')
 
 def home(request):
     return render(request, 'app/home.html')
@@ -86,7 +82,7 @@ def signup(request):
                 profile.save()
 
                 if role.lower() == 'student':
-                    student = Student(profile=profile, level=level)
+                    student = Student(user=user, profile=profile, level=level)
                     student.save()
                 elif role.lower() == 'teacher':
                     teacher = Teacher(user=user, profile=profile)
@@ -308,28 +304,6 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
             courses = self.get_queryset()
             return render(request, self.template_name, {'form': form, 'object_list': courses})
 
-@login_required
-def create_course(request):
-    if request.method == 'POST':
-        form = CourseForm(request.POST)
-        if form.is_valid():
-            course = form.save()
-
-            # Use the CourseAgent to process PDFs for the course
-            course_agent = learning_agents.course_agent()
-            pdf_paths = []  # Replace with the actual PDF paths
-            course_materials = course_agent.process_pdfs_for_course(pdf_paths)
-
-            # Associate the processed PDFs with the course
-            for material in course_materials:
-                pdf = PDF.objects.create(file=material)  # Replace with the actual PDF creation code
-                course.pdfs.add(pdf)
-
-            return redirect('course_detail', course_id=course.id)
-    else:
-        form = CourseForm()
-
-    return render(request, 'app/teacher_course.html', {'form': form})
 
 @login_required
 def delete_course(request, course_id):
@@ -662,21 +636,14 @@ from django.shortcuts import redirect, get_object_or_404
 from django.contrib import messages
 from django.http import HttpResponse
 from .models import Tutor
-from .agents import LearningAgents
 
 def tutor_view(request, tutor_id):
     try:
-        tutor = Tutor.objects.get(pk=tutor_id)
-        learning_agents = LearningAgents(openai_api_key='your_openai_api_key_here')
-        tutor_agent = learning_agents.tutor_agent(tutor)
-        resources = tutor_agent.process_pdfs_for_tutoring()
 
-        # Assuming resources are serialized or summarized for session storage:
-        request.session['tutor_resources'] = [resource.summary() for resource in resources]  # This assumes each resource has a summary method
 
         # Redirect to a view where these resources are used
         # Example: redirect to a resource display view
-        return redirect('display_resources', tutor_id=tutor.id)
+        return redirect('display_resources')
     except Tutor.DoesNotExist:
         messages.error(request, "Tutor not found")
         return redirect('error_view')  # Redirect to an error page or appropriate action
@@ -782,9 +749,121 @@ def send_message(request):
         return JsonResponse({'error': 'OpenAI API error', 'details': str(e)}, status=500)
 
 
-# Create me a function that creates a small report about the student profile
-# The report should include the student's name, role, and level (if applicable)
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render, HttpResponse
+from .models import Course, Student
+from django.conf import settings
+import openai
+
+# Initialize the OpenAI client with your API key
+
 def student_report(student):
-    # put name role level
-    report = f"Name: {student.profile.fname} {student.profile.lname}, Role: {student.profile.role},"
-    return report
+    # Make sure to access the correct attributes based on your Student model structure
+    if hasattr(student, 'profile'):
+        return f"Student: {student.profile.fname} {student.profile.lname} | Level: {student.level} | Role: {student.profile.role}"
+    else:
+        return f"Student: {student.user.first_name} {student.user.last_name} | Level: {student.level} | Role: {student.role}"
+
+
+import openai
+from django.conf import settings
+
+# Set the API key globally or in each function as needed
+openai.api_key = settings.OPENAI_API_KEY
+
+def get_ai_response(prompt, report=None):
+    client = OpenAI(api_key=openai.api_key)
+    
+    try:
+        # Define your messages for the chat API call
+        messages = [
+            {"role": "system", "content": "You are an assistant chatbot."},
+            {"role": "user", "content": prompt}
+        ]
+
+        if report:
+            messages.append({"role": "system", "content": f"Your student information: {report}"})
+
+        # Make the API call using the chat completion API
+        response = client.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            max_tokens=150
+        )
+        
+        return response.choices[0].message.content.strip()
+        # Extracting the response text correctly from the API response structure
+        
+    except Exception as e:
+        print(f"Error accessing OpenAI: {str(e)}")
+        return "There was an error processing your request."
+
+
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render, HttpResponse
+from django.http import JsonResponse
+from .models import Course, Student
+from .agents import CourseCreatorAgent  # Assuming your CourseCreatorAgent is in agents.py
+from django.conf import settings
+
+from django.http import HttpResponse
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render, HttpResponse
+from django.http import JsonResponse
+from .models import Course, Student
+from .agents import CourseCreatorAgent  # Make sure the import is correct  # Ensure these utility functions are imported if needed
+from django.conf import settings
+
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render, HttpResponse
+from django.http import JsonResponse
+from .models import Course, Student
+from .agents import CourseCreatorAgent  # Ensure this is correctly imported
+from django.conf import settings
+import openai
+from .agents import CourseCreatorAgent
+from django.conf import settings
+import openai
+
+@login_required
+def course_view(request, course_id):
+    course = get_object_or_404(Course, id=course_id)
+    if not hasattr(request.user, 'student'):
+        return HttpResponse("You need a student profile to access this page.", status=403)
+
+    student = request.user.student
+    student_info = student_report(student)
+    # Initialize with openai key
+    agent = CourseCreatorAgent(openai.api_key)
+
+    if request.method == 'POST':
+        print("Received POST data:", request.POST)  # Debugging line to see exactly what is received
+
+        prompt = request.POST.get('prompt', None)
+        action = request.POST.get('action', None)
+
+        if prompt:
+            response_message = get_ai_response(prompt, student_info)
+            return render(request, 'app/course_with_generator.html', {
+                'course': course,
+                'ai_response': response_message,
+                'student_report': student_info
+            })
+
+        elif action == 'generate_course':
+            pdf_files = [pdf.file.path for pdf in course.pdfs.all()]
+            course_content = agent.generate_course_content(student_info, pdf_files)
+            return render(request, 'app/course_with_generator.html', {
+                'course': course,
+                'course_content': course_content,
+                'student_report': student_info
+            })
+
+        else:
+            return HttpResponse(f"Invalid action: {action}")
+
+    else:
+        # Display the initial course view without interaction
+        return render(request, 'app/student_dashboard.html', {'course': course})

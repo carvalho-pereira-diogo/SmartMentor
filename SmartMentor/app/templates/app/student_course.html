@@ -104,12 +104,42 @@ Courses
                 </section>
             </div>
             <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
+            <div class="container-xl">
+                <section>
+                  <h4>Start Communication</h4>
+                  <p>Here are the links to get access to the courses: </p>
+                  <table class="table table-striped">
+                    <thead>
+                      <tr>
+                        <th>Course Name</th>
+                        <th>Link</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                        {% for course in user.profile.student.courses.all %}
+                        <tr>
+                            <td>{{ course.name }}</td>
+                            <td>
+                                <form action="{% url 'interactive_learning' course.id %}" method="post">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-warning">Access Course</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                        
+                    </tbody>
+                  </table>
+                </section>
+              </div>
+            
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
 
         {% else %}
             <h1>Access Denied</h1>

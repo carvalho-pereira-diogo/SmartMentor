@@ -628,242 +628,179 @@ def stu_dashboard(request):
 def te_dashboard(request):
     return render(request, 'app/te_dashboard.html')
 
+# Crete me a function to get the different information of a student 
+#From this function
+    
+from django.http import JsonResponse
 
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
-
-from django.shortcuts import redirect, get_object_or_404
-from django.contrib import messages
-from django.http import HttpResponse
-from .models import Tutor
-
-def tutor_view(request, tutor_id):
+def get_student_info(request):
     try:
+        student = Student.objects.get(user=request.user)
+        # Assuming 'profile' is a related name for a OneToOneField from User to a Profile model
+        return {
+            'username': student.user.username,  # Adjusted from student.profile.username
+            'fname': student.user.first_name,   # Adjusted for typical Django User model
+            'lname': student.user.last_name,    # Adjusted for typical Django User model
+            'email': student.user.email,
+            'role': student.profile.role,       # Assuming this is correct
+            'level': student.level
+        }
+    except Student.DoesNotExist:
+        return None
+    
 
-
-        # Redirect to a view where these resources are used
-        # Example: redirect to a resource display view
-        return redirect('display_resources')
-    except Tutor.DoesNotExist:
-        messages.error(request, "Tutor not found")
-        return redirect('error_view')  # Redirect to an error page or appropriate action
-    except Exception as e:
-        messages.error(request, f"An error occurred: {str(e)}")
-        return redirect('error_view')  # Redirect to an error page or appropriate action
-
-def display_resources_view(request, tutor_id):
-    resources = request.session.get('tutor_resources', [])
-    if not resources:
-        messages.error(request, "No resources found or session expired.")
-        return redirect('some_default_view')
-
-    return HttpResponse('<br>'.join(resources))  # Display resources; customize as needed
-
-def error_view(request):
-    return render(request, 'app/error.html', {'error_message': 'A generic error occurred.'})
-
-
-from django.shortcuts import render, get_object_or_404
+import json
+from django.http import JsonResponse
+from django.shortcuts import render
 from .models import Tutor
-
-def chat_with_tutor(request, tutor_id):
-    tutor = get_object_or_404(Tutor, pk=tutor_id)
-    
-    # Example static introduction
-    introduction = f"Hello, I am {tutor.name}, your personal tutor assistant. How can I assist you today?"
-
-    # If you have more dynamic content, you might fetch or generate it here
-    
-    context = {
-        'tutor': tutor,
-        'introduction': introduction,
-    }
-    return render(request, 'app/chat_with_tutor.html', context)
-
-import openai
-from django.conf import settings
-
-# Set the API key from Django settings
-openai.api_key = settings.OPENAI_API_KEY
-
-import openai
-from django.conf import settings
-
-# Set the API key from Django settings
-openai.api_key = settings.OPENAI_API_KEY
+from PyPDF2 import PdfReader
 
 from openai import OpenAI
 client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
-def get_ai_response(prompt, report = None):
+def get_pdf_text(tutor_id):
     try:
-        # Prepare the conversation context with system and previous chat history if needed
-        system_prompt = {
-            "role":  "system", 
-            "content": "You are a assistant chatbot helping students with their queries. You are a teacher explaining a concept to a student. As a python tutor, you are helping a student with a coding problem and simple theoretical questions. Python programming assistant chatbot. Important= Everything else that is not included inside the topic gets deleted. Always ask if student has understood it. Your student information: "+report+" -base the information on it. In case of asking for report return the report of student" }
-        
-        user_prompt = {"role": "user", "content": prompt}
+        tutor = Tutor.objects.get(pk=tutor_id)
+        pdf_files = tutor.pdfs.all()  # Assuming pdfs is a related name for file fields
+        text_content = ""
+        for pdf_file in pdf_files:
+            reader = PdfReader(pdf_file.file.path)
+            for page in reader.pages:
+                text_content += page.extract_text() + "\n"
+        return text_content
+    except Exception as e:
+        print(f"Error reading PDFs: {str(e)}")
+        return ""
 
-        # Using the Completion method with conversation context
+def ask_openai_for_tutor(request, message, pdf_text, tutor_id):
+    try:
+        tutor = Tutor.objects.get(pk=tutor_id)
+        print(f"PDFs for tutor {tutor.name}: {pdf_text}")
+        report = get_student_info(request)
+        
+        # Combine PDF text with other context information
+        combined_content = f"Tutor Name: {tutor.name}. Short Description: {tutor.description}. PDF Text from tutor: {pdf_text}. Student Information: {json.dumps(report)}. Now as an assistant for students, your first task is to help the student within the context of the tutor's PDFs. Ask for introductory questions to determine their familiarity with the subject. Based on the responses and the level, provide appropriate guidance. If you can, suggest for online resources. Also guide them into how to do certain tasks. In case, the student writes code or the instructions, you correct it and provide feedback. Also, if you want you can engage them in interactive exercises. Finally, do not provide information that is not about the topic in the PDFS, this means you should not provide information that is not in the PDFs. Do not explain questions that are not related to the topic. Subject: {tutor.description}."
+        
+        system_prompt = {
+            "role": "system", 
+            "content": combined_content
+        }
+        
+        user_prompt = {"role": "user", "content": message}
+
         chat_completion = client.chat.completions.create(
-            model="gpt-3.5-turbo",  # Adjust this to the latest available model, if different
-            messages=[system_prompt, user_prompt],  # Combine prompts for context
+            model="gpt-3.5-turbo",
+            messages=[system_prompt, user_prompt],
             max_tokens=150,
             top_p=0.9
         )
-        # Extracting the response text from the latest API response structure
-        return chat_completion.choices[0].message.content.strip()  # Adjust accessing the content
+        return chat_completion.choices[0].message.content.strip()
     except Exception as e:
         print(f"Error accessing OpenAI: {str(e)}")
         return "There was an error processing your request."
 
-
-import json
-import openai
+from django.shortcuts import render, get_object_or_404
 from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
-from django.conf import settings
 
-import json
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
-from django.views.decorators.http import require_POST
 
-@csrf_exempt
-@require_POST
-def send_message(request):
-    #get student 
-    student = request.user.profile.student
-    #get selected tutor
-    student_rep = student_report(student)
+def tutor_view(request, tutor_id):
+    tutor = get_object_or_404(Tutor, pk=tutor_id)
     
-    try:
-        data = json.loads(request.body,)  # Parsing the JSON body of the POST request
-        user_message = data.get('message')
-        response_message = get_ai_response(user_message, student_rep)  # Fetching the AI response
-        return JsonResponse({'reply': response_message})
-    except json.JSONDecodeError as e:
-        return JsonResponse({'error': 'Invalid JSON', 'details': str(e)}, status=400)
-    except Exception as e:
-        return JsonResponse({'error': 'OpenAI API error', 'details': str(e)}, status=500)
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, HttpResponse
-from .models import Course, Student
-from django.conf import settings
-import openai
-
-# Initialize the OpenAI client with your API key
-
-def student_report(student):
-    # Make sure to access the correct attributes based on your Student model structure
-    if hasattr(student, 'profile'):
-        return f"Student: {student.profile.fname} {student.profile.lname} | Level: {student.level} | Role: {student.profile.role}"
-    else:
-        return f"Student: {student.user.first_name} {student.user.last_name} | Level: {student.level} | Role: {student.role}"
-
-
-import openai
-from django.conf import settings
-
-# Set the API key globally or in each function as needed
-openai.api_key = settings.OPENAI_API_KEY
-
-def get_ai_response(prompt, report=None):
-    client = OpenAI(api_key=openai.api_key)
-    
-    try:
-        # Define your messages for the chat API call
-        messages = [
-            {"role": "system", "content": "You are an assistant chatbot."},
-            {"role": "user", "content": prompt}
-        ]
-
-        if report:
-            messages.append({"role": "system", "content": f"Your student information: {report}"})
-
-        # Make the API call using the chat completion API
-        response = client.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=messages,
-            max_tokens=150
-        )
-        
-        return response.choices[0].message.content.strip()
-        # Extracting the response text correctly from the API response structure
-        
-    except Exception as e:
-        print(f"Error accessing OpenAI: {str(e)}")
-        return "There was an error processing your request."
-
-
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, HttpResponse
-from django.http import JsonResponse
-from .models import Course, Student
-from .agents import CourseCreatorAgent  # Assuming your CourseCreatorAgent is in agents.py
-from django.conf import settings
-
-from django.http import HttpResponse
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, HttpResponse
-from django.http import JsonResponse
-from .models import Course, Student
-from .agents import CourseCreatorAgent  # Make sure the import is correct  # Ensure these utility functions are imported if needed
-from django.conf import settings
-
-from django.contrib.auth.decorators import login_required
-from django.shortcuts import get_object_or_404, render, HttpResponse
-from django.http import JsonResponse
-from .models import Course, Student
-from .agents import CourseCreatorAgent  # Ensure this is correctly imported
-from django.conf import settings
-import openai
-from .agents import CourseCreatorAgent
-from django.conf import settings
-import openai
-
-@login_required
-def course_view(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    if not hasattr(request.user, 'student'):
-        return HttpResponse("You need a student profile to access this page.", status=403)
-
-    student = request.user.student
-    student_info = student_report(student)
-    # Initialize with openai key
-    agent = CourseCreatorAgent(openai.api_key)
-
     if request.method == 'POST':
-        print("Received POST data:", request.POST)  # Debugging line to see exactly what is received
+        message = request.POST.get('message')
+        pdf_text = get_pdf_text(tutor_id)
+        response = ask_openai_for_tutor(request, message, pdf_text, tutor_id)
+        return JsonResponse({'message': message, 'response': response})
 
-        prompt = request.POST.get('prompt', None)
-        action = request.POST.get('action', None)
+    return render(request, 'app/chat_with_tutor.html', {'tutor': tutor})
 
-        if prompt:
-            response_message = get_ai_response(prompt, student_info)
-            return render(request, 'app/course_with_generator.html', {
-                'course': course,
-                'ai_response': response_message,
-                'student_report': student_info
-            })
+# Quiz section
 
-        elif action == 'generate_course':
-            pdf_files = [pdf.file.path for pdf in course.pdfs.all()]
-            course_content = agent.generate_course_content(student_info, pdf_files)
-            return render(request, 'app/course_with_generator.html', {
-                'course': course,
-                'course_content': course_content,
-                'student_report': student_info
-            })
 
-        else:
-            return HttpResponse(f"Invalid action: {action}")
+def quiz_view(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        response = "This is a placeholder response."
+        return JsonResponse({'message': message, 'response': response})
+    
+    return render(request, 'app/chat_with_quiz.html', {'quiz': quiz})
 
-    else:
-        # Display the initial course view without interaction
-        return render(request, 'app/student_dashboard.html', {'course': course})
+RESPONSE_JSON = {
+    "1": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+    "2": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+    "3": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+}
+
+RESPONSE_JSON = {
+    "1": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+    "2": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+    "3": {
+        "mcq": "multiple choice question",
+        "options": {
+            "a": "choice here",
+            "b": "choice here",
+            "c": "choice here",
+            "d": "choice here",
+        },
+        "correct": "correct answer",
+    },
+}
+
+TEMPLATE="""
+Text:{text}
+You are an expert MCQ maker. Given the above text, it is your job to \
+create a quiz  of {number} multiple choice questions for {subject} students in {tone} tone. 
+Make sure the questions are not repeated and check all the questions to be conforming the text as well.
+Make sure to format your response like  RESPONSE_JSON below  and use it as a guide. \
+Ensure to make {number} MCQs
+### RESPONSE_JSON
+{response_json}
+
+"""
+

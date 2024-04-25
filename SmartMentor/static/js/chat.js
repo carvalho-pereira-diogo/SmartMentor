@@ -2,7 +2,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('send-button').addEventListener('click', function() {
         var input = document.getElementById('message-input');
         if (input.value.trim() !== '') {
-            sendMessage(input.value);
+            sendMessage(input.value); // No longer passing tutor_id
             input.value = ''; // Clear the input after sending
         }
     });
@@ -24,26 +24,22 @@ function sendMessage(message) {
         })
         .then(response => response.json())
         .then(data => {
-            console.log(data); // Log the response data
             var replyMessage = document.createElement('div');
+            // Accessing 'reply' property of the response object
             replyMessage.textContent = 'Tutor: ' + (data.reply || 'Error: No response from server');
             messageContainer.appendChild(replyMessage);
         })
         .catch(error => {
             console.error('Error:', error);
+            var errorMessage = document.createElement('div');
+            errorMessage.textContent = 'Tutor: Error communicating with server.';
+            messageContainer.appendChild(errorMessage);
         });
 }
 
 
-
 function getCSRFToken() {
-    // Function to get the CSRF token from a cookie
-    let cookies = document.cookie.split(';');
-    for (let i = 0; i < cookies.length; i++) {
-        let cookie = cookies[i].trim();
-        if (cookie.startsWith('csrftoken=')) {
-            return cookie.substring('csrftoken='.length, cookie.length);
-        }
-    }
-    return null;
+    const value = `; ${document.cookie}`;
+    const parts = value.split(`; csrftoken=`);
+    if (parts.length === 2) return parts.pop().split(';').shift();
 }

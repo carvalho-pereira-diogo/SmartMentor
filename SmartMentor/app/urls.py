@@ -30,7 +30,7 @@ urlpatterns = [
     # Create course for teacher
     path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
     path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),
-    path('course/<int:course_id>/interactive/', views.course_view, name='interactive_learning'),
+    #path('course/<int:course_id>/interactive/', views.course_view, name='interactive_learning'),
     
     path('teacher/pdfs/delete/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
@@ -46,11 +46,7 @@ urlpatterns = [
     path('teacher/quiz/delete/<int:quiz_id>/', views.delete_quiz, name='quiz_delete'),
 
     path('student/ai_tutor', StudentTutorView.as_view(), name='student_ai_tutor'),
-    path('student/ai_tutor/chat/<int:tutor_id>/', tutor_view, name='tutor_view'),
-    path('tutor/display_resources/<int:tutor_id>/', display_resources_view, name='display_resources'),
-    path('error/', error_view, name='error_view'),  # Define an error_view in your views.py
-    path('chat_with_tutor/<int:tutor_id>/', chat_with_tutor, name='chat_with_tutor'),
-    path('api/send_message/', send_message, name='send_message'),
+    path('student/ai_tutor/chat/<int:tutor_id>/', views.tutor_view, name='chat_with_tutor'),
     
     path('enroll_tutor/', EnrollTutorView.as_view(), name='enroll_ai_tutor'),
     path('unenroll_tutor/<int:tutor_id>/', views.unenroll_tutor, name='unenroll_ai_tutor'),

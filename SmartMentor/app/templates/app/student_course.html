@@ -120,10 +120,7 @@ Courses
                         <tr>
                             <td>{{ course.name }}</td>
                             <td>
-                                <form action="{% url 'interactive_learning' course.id %}" method="post">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning">Access Course</button>
-                                </form>
+
                             </td>
                         </tr>
                         {% endfor %}

@@ -108,12 +108,38 @@ Student Quiz
         </section>
     </div>
     <br>
+
+    <div class="container-xl">
+      <section>
+        <h4>Start Communication</h4>
+        <p>Here are the links to participate in the different quizzes:</p>
+        <table class="table table-striped">
+          <thead>
+            <tr>
+              <th>Quiz Name</th>
+              <th>Link</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for quiz in enrolled_quizzes %}
+            <tr>
+              <td>{{ quiz.name }}</td>
+              <td><a href="{% url 'chat_with_quiz' quiz.id %}" target="_blank">Quiz</a></td>
+            </tr>
+          {% endfor %}
+          </tbody>
+        </table>
+      </section>
+    </div>
+  
     <br>
     <br>
     <br>
     <br>
     <br>
     <br>
+    <br>
+  
 
 {% else %}
     <h1>Access Denied</h1>

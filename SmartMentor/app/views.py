@@ -671,22 +671,48 @@ def get_pdf_text(tutor_id):
     except Exception as e:
         print(f"Error reading PDFs: {str(e)}")
         return ""
+    
+#Create a list for memory and always delete the oldest one after 3 messages got added
+memory = {}
+
+def add_message_to_memory(message, user_id):
+    if user_id not in memory:
+        memory[user_id] = []
+    memory[user_id].append(message)
+    if len(memory[user_id]) > 3:
+        memory[user_id].pop(0)
+
 
 def ask_openai_for_tutor(request, message, pdf_text, tutor_id):
     try:
         tutor = Tutor.objects.get(pk=tutor_id)
         print(f"PDFs for tutor {tutor.name}: {pdf_text}")
         report = get_student_info(request)
+        print(f"Type of report: {type(report)}, Value of report: {report}")
         
         # Combine PDF text with other context information
         combined_content = f"Tutor Name: {tutor.name}. Short Description: {tutor.description}. PDF Text from tutor: {pdf_text}. Student Information: {json.dumps(report)}. Now as an assistant for students, your first task is to help the student within the context of the tutor's PDFs. Ask for introductory questions to determine their familiarity with the subject. Based on the responses and the level, provide appropriate guidance. If you can, suggest for online resources. Also guide them into how to do certain tasks. In case, the student writes code or the instructions, you correct it and provide feedback. Also, if you want you can engage them in interactive exercises. Finally, do not provide information that is not about the topic in the PDFS, this means you should not provide information that is not in the PDFs. Do not explain questions that are not related to the topic. Subject: {tutor.description}."
         
+        student_messages = ""
+        for user_id, messages in memory.items():
+            if user_id == request.user.id:
+                # add messages to the student_messages
+                student_messages = messages
+                
+        print(f"Type of student_messages: {type(student_messages)}, Value of student_messages: {student_messages}")
+        
+        # Prepare the prompt with the last six messages as context
+        context = " ".join(student_messages)
+        prompt = f"{context} {combined_content}"
+        
         system_prompt = {
             "role": "system", 
-            "content": combined_content
+            "content": prompt
         }
         
         user_prompt = {"role": "user", "content": message}
+        
+        
 
         chat_completion = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -708,6 +734,7 @@ def tutor_view(request, tutor_id):
     
     if request.method == 'POST':
         message = request.POST.get('message')
+        add_message_to_memory(message, request.user.id)
         pdf_text = get_pdf_text(tutor_id)
         response = ask_openai_for_tutor(request, message, pdf_text, tutor_id)
         return JsonResponse({'message': message, 'response': response})
@@ -803,4 +830,3 @@ Ensure to make {number} MCQs
 {response_json}
 
 """
-

@@ -39,6 +39,7 @@ urlpatterns = [
     path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),
     
     path('student/quiz', StudentQuizView.as_view(), name='student_quiz'),
+    path('student/quiz/<int:quiz_id>/', views.quiz_view, name='chat_with_quiz'),
     path('enroll_quiz/', EnrollQuizView.as_view(), name='enroll_quiz'),
     path('unenroll_quiz/<int:quiz_id>/', views.unenroll_quiz, name='unenroll_quiz'),
     path('teacher/quiz', TeacherQuizView.as_view(), name='teacher_quiz'),

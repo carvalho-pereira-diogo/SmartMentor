@@ -124,7 +124,9 @@ Student Quiz
             {% for quiz in enrolled_quizzes %}
             <tr>
               <td>{{ quiz.name }}</td>
-              <td><a href="{% url 'chat_with_quiz' quiz.id %}" target="_blank">Quiz</a></td>
+              <td>
+                <a href="{% url 'chat_with_quiz' quiz.id %}" target="_blank" class="btn btn-warning">Quiz</a>
+            </td>
             </tr>
           {% endfor %}
           </tbody>

@@ -76,7 +76,7 @@
 {% block content %}
 <div class="chat-container">
   <div class="card flex-grow-1">
-    <div class="card-header bg-primary text-white">Chat with {{ quiz.name }} 
+    <div class="card-header bg-primary text-white">Chat with {{ course.name }} 
         <span class="close-tab" onclick="window.close();">&#x2715;</span> <!-- Unicode character for "X" -->
     </div>
     
@@ -88,10 +88,10 @@
         <li class="message received">
           <div class="message-text">
             <div class="message-sender">
-              <b>{{ quiz.name }}</b>
+              <b>{{ course.name }}</b>
             </div>
             <div class="message-content">
-              Hi, I am {{ quiz.name }}, enter "start" to begin the quiz.
+              Hi, am an agent based on this course: {{ course.name }}, enter "start" to begin the course.
             </div>
           </div>
         </li>
@@ -160,7 +160,7 @@
             messageItem.innerHTML = `
                 <div class="message-text">
                     <div class="message-sender">
-                        <b>{{ quiz.name }}</b>
+                        <b>{{ course.name }}</b>
                     </div>
                     <div class="message-content">
                         ${response}

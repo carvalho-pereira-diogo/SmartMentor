@@ -656,9 +656,9 @@ from .models import Tutor
 from PyPDF2 import PdfReader
 
 from openai import OpenAI
-client = OpenAI(api_key=settings.OPENAI_API_KEY)
+clientTutor = OpenAI(api_key=settings.OPENAI_API_KEY_TUTOR)
 
-def get_pdf_text(tutor_id):
+def get_pdf_text_tutor(tutor_id):
     try:
         tutor = Tutor.objects.get(pk=tutor_id)
         pdf_files = tutor.pdfs.all()  # Assuming pdfs is a related name for file fields
@@ -672,21 +672,24 @@ def get_pdf_text(tutor_id):
         print(f"Error reading PDFs: {str(e)}")
         return ""
     
+    
 #Create a list for memory and always delete the oldest one after 3 messages got added
-memory = {}
+memoryTutor = {}
 
-def add_message_to_memory(message, user_id):
-    if user_id not in memory:
-        memory[user_id] = []
-    memory[user_id].append(message)
-    if len(memory[user_id]) > 3:
-        memory[user_id].pop(0)
+def add_message_to_memory_tutor(message, user_id):
+    if user_id not in memoryTutor:
+        memoryTutor[user_id] = []
+    memoryTutor[user_id].append(message)
+    if len(memoryTutor[user_id]) > 3:
+        memoryTutor[user_id].pop(0)
+
+
 
 
 def ask_openai_for_tutor(request, message, pdf_text, tutor_id):
     try:
         tutor = Tutor.objects.get(pk=tutor_id)
-        print(f"PDFs for tutor {tutor.name}: {pdf_text}")
+        #print(f"PDFs for tutor {tutor.name}: {pdf_text}")
         report = get_student_info(request)
         print(f"Type of report: {type(report)}, Value of report: {report}")
         
@@ -694,7 +697,7 @@ def ask_openai_for_tutor(request, message, pdf_text, tutor_id):
         combined_content = f"Tutor Name: {tutor.name}. Short Description: {tutor.description}. PDF Text from tutor: {pdf_text}. Student Information: {json.dumps(report)}. Now as an assistant for students, your first task is to help the student within the context of the tutor's PDFs. Ask for introductory questions to determine their familiarity with the subject. Based on the responses and the level, provide appropriate guidance. If you can, suggest for online resources. Also guide them into how to do certain tasks. In case, the student writes code or the instructions, you correct it and provide feedback. Also, if you want you can engage them in interactive exercises. Finally, do not provide information that is not about the topic in the PDFS, this means you should not provide information that is not in the PDFs. Do not explain questions that are not related to the topic. Subject: {tutor.description}."
         
         student_messages = ""
-        for user_id, messages in memory.items():
+        for user_id, messages in memoryTutor.items():
             if user_id == request.user.id:
                 # add messages to the student_messages
                 student_messages = messages
@@ -714,7 +717,7 @@ def ask_openai_for_tutor(request, message, pdf_text, tutor_id):
         
         
 
-        chat_completion = client.chat.completions.create(
+        chat_completion = clientTutor.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[system_prompt, user_prompt],
             max_tokens=150,
@@ -734,99 +737,283 @@ def tutor_view(request, tutor_id):
     
     if request.method == 'POST':
         message = request.POST.get('message')
-        add_message_to_memory(message, request.user.id)
-        pdf_text = get_pdf_text(tutor_id)
+        add_message_to_memory_tutor(message, request.user.id)
+        pdf_text = get_pdf_text_tutor(tutor_id)
         response = ask_openai_for_tutor(request, message, pdf_text, tutor_id)
         return JsonResponse({'message': message, 'response': response})
 
     return render(request, 'app/chat_with_tutor.html', {'tutor': tutor})
 
 # Quiz section
+clientQuiz = OpenAI(api_key=settings.OPENAI_API_KEY_QUIZ)
 
+def get_pdf_text_quiz(quiz_id):
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+        pdf_files = quiz.pdfs.all()  # Assuming pdfs is a related name for file fields
+        text_content = ""
+        for pdf_file in pdf_files:
+            reader = PdfReader(pdf_file.file.path)
+            for page in reader.pages:
+                text_content += page.extract_text() + "\n"
+        return text_content
+    except Exception as e:
+        print(f"Error reading PDFs: {str(e)}")
+        return ""
+    
+memoryQuiz = {}
+memoryResponses_quiz = {}
 
+def add_message_to_memory_quiz(message, user_id):
+    if user_id not in memoryQuiz:
+        memoryQuiz[user_id] = []
+    memoryQuiz[user_id].append(message)
+    
+    
+def add_response_to_memory_quiz(response, user_id):
+    if user_id not in memoryResponses_quiz:
+        memoryResponses_quiz[user_id] = []
+    memoryResponses_quiz[user_id].append(response)
+    if len(memoryResponses_quiz[user_id]) > 3:
+        memoryResponses_quiz[user_id].pop(0)
+        
+def ask_openai_for_quiz(request, message, quiz_id, questions):
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+        report = get_student_info(request)
+        
+        student_messages = ""
+        for user_id, messages in memoryQuiz.items():
+            if user_id == request.user.id:
+                # add messages to the student_messages
+                student_messages = messages   
+                
+        
+        quiz_name = quiz.name
+        quiz_description = quiz.description
+        
+        student_questions = questions
+        
+        print(f"Type of student_questions: {type(student_questions)}, Value of student_questions: {student_questions}")
+        
+        last_input = student_messages[-1]
+        
+        print(f"Last input: {last_input}")
+                
+        
+        #test    
+        print(f"Type of student_messages: {type(student_messages)}, Value of student_messages: {student_messages}")
+        
+        quiz_prompt="""
+            Your information:\
+            -Quiz Name: {quiz_name}\
+            -Quiz Description: {quiz_description}\
+            \
+            Student information:\
+            -All user inputs:\
+            {student_messages}\
+            -Student information:\
+            {report}\
+            \
+            System information:\
+            You are an expert in asking questions. Given the questions below, it is your job to \
+            create a question for the user. \
+            You should ignore all inputs what are not in the format of "start", "next" or "answer "1,2,3,4"\
+            With the provided list of questions you should be able to determine the next question.\
+            The student has a level of "beginner", "intermediate" or "advanced". Based on the level you should provide the next question.\
+            List  of questions: {student_questions}\
+            \
+            Question example:
+            Question: "What is the capital of France?"\
+            "1": "Paris",\
+            "2": "Berlin",\
+            "3": "Lisbon",\
+            "4": "Luxembourg",\
+            \
+                
+            The system should determine the output based on the student input.
+            This means:
+                
+            Student input: "start"\
+            System output:\
+            Question: "What is the capital of France?"\
+            "1": "Paris",\
+            "2": "Berlin",\
+            "3": "Lisbon",\
+            "4": "Luxembourg",\
+                    
+            Student input: "next"\
+            Question: "What is the capital of France?"\
+            "1": "Paris",\
+            "2": "Berlin",\
+            "3": "Lisbon",\
+            "4": "Luxembourg",\
+                
+            Student input: "answer "1,2,3,4"\ 
+            System output: You responde "correct" or "incorrect"\
+                
+            Based on the student input you should determine what to do:
+            input: {last_input}\
+        """
+        
+        system_prompt = {
+            "role": "system", 
+            "content": quiz_prompt
+        }
+        
+        user_prompt = {"role": "user", "content": message}
+
+        chat_completion = clientQuiz.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[system_prompt, user_prompt],
+            max_tokens=300,
+            top_p=0.9
+        )
+        return chat_completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error accessing OpenAI: {str(e)}")
+        return "There was an error processing your request."
+    
+    
+def generate_questions(request, quiz_id):
+    quiz = get_object_or_404(Quiz, pk=quiz_id)
+    pdf_text = get_pdf_text_quiz(quiz_id)
+    response = ask_openai_for_quiz(request, "", pdf_text, quiz_id)
+    add_response_to_memory_quiz(response, request.user.id)
+    return JsonResponse({'response': response})
+
+def ask_openai_questions(quiz_id):
+    try:
+        quiz = Quiz.objects.get(pk=quiz_id)
+        #read the pdf text from the quiz
+        pdf_text = get_pdf_text_quiz(quiz_id)
+        #print(pdf_text)
+        quiz_description = quiz.description
+        
+        quiz_prompt="""
+            You create a list of questions, so that an other agent can determine which question to take.
+            Based on the information: {pdf_text} you should create 50 questions.\
+                
+            Example of a question:\
+            (Question: "What is the capital of France?"\
+            "1": "Paris",\
+            "2": "Berlin",\
+            "3": "Lisbon",\
+            "4": "Luxembourg",)\
+            <end>\
+                
+            Return the list of questions. <end> split the questions.\
+        """
+        
+        system_prompt = {
+            "role": "system", 
+            "content": quiz_prompt
+        }
+        
+
+        chat_completion = clientQuiz.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[system_prompt],
+            max_tokens=3000,
+            top_p=0.9
+        )
+        return chat_completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error accessing OpenAI: {str(e)}")
+        return "There was an error processing your request."
+    
+def get_questions(response):
+    #return a list of questions use split to divide the questions with <end>
+    return response.split("<end>")
+    
 def quiz_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
+    questions = get_questions(ask_openai_questions(quiz_id))
+    print(f"Questions: {questions}")
     if request.method == 'POST':
         message = request.POST.get('message')
-        response = "This is a placeholder response."
+        add_message_to_memory_quiz(message, request.user.id)
+        response = ask_openai_for_quiz(request, message, quiz_id, questions)
+        add_response_to_memory_quiz(response, request.user.id)
         return JsonResponse({'message': message, 'response': response})
     
     return render(request, 'app/chat_with_quiz.html', {'quiz': quiz})
 
-RESPONSE_JSON = {
-    "1": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-    "2": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-    "3": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-}
+#Course sections
+clientCourse= OpenAI(api_key=settings.OPENAI_API_KEY_COURSE)
 
-RESPONSE_JSON = {
-    "1": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-    "2": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-    "3": {
-        "mcq": "multiple choice question",
-        "options": {
-            "a": "choice here",
-            "b": "choice here",
-            "c": "choice here",
-            "d": "choice here",
-        },
-        "correct": "correct answer",
-    },
-}
+def get_pdf_text_course(course_id):
+    try:
+        course = Course.objects.get(pk=course_id)
+        pdf_files = course.pdfs.all()  # Assuming pdfs is a related name for file fields
+        text_content = ""
+        for pdf_file in pdf_files:
+            reader = PdfReader(pdf_file.file.path)
+            for page in reader.pages:
+                text_content += page.extract_text() + "\n"
+        return text_content
+    except Exception as e:
+        print(f"Error reading PDFs: {str(e)}")
+        return ""
+    
+    
+#Create a list for memory and always delete the oldest one after 3 messages got added
+memoryCourse = {}
 
-TEMPLATE="""
-Text:{text}
-You are an expert MCQ maker. Given the above text, it is your job to \
-create a quiz  of {number} multiple choice questions for {subject} students in {tone} tone. 
-Make sure the questions are not repeated and check all the questions to be conforming the text as well.
-Make sure to format your response like  RESPONSE_JSON below  and use it as a guide. \
-Ensure to make {number} MCQs
-### RESPONSE_JSON
-{response_json}
+def add_message_to_memory_course(message, user_id):
+    if user_id not in memoryCourse:
+        memoryCourse[user_id] = []
+    memoryCourse[user_id].append(message)
+    if len(memoryCourse[user_id]) > 3:
+        memoryCourse[user_id].pop(0)
 
-"""
+def course_view(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    
+    if request.method == 'POST':
+        message = request.POST.get('message')
+        add_message_to_memory_tutor(message, request.user.id)
+        topics = ask_openai_for_topics(request, course_id)
+        print(f"Topics: {topics}")
+        #response = ask_openai_for_tutor(request, message, pdf_text, tutor_id)
+        response = "This is a placeholder."
+        return JsonResponse({'message': message, 'response': response})
+
+    return render(request, 'app/chat_with_course.html', {'course': course})
+
+#Create topics list for the course
+def ask_openai_for_topics(request, course_id):
+    try:
+        course = Course.objects.get(pk=course_id)
+        pdf_text = get_pdf_text_course(course_id)
+        course_description = course.description
+        
+        course_prompt="""
+            You create a list of topics, so that an other agent can determine which topic to take.\
+            Description of course: {course_description}\
+            Based on the information: {pdf_text} you should create a list of topics that are based in the information.\
+            Create as many topics as you can related to the information.\
+            \
+            Return me a list of topics in python structure:\
+            Example:\
+            ["lists", "types", "for loops"]\
+                
+            As output just return the list of topics.\
+        """
+        
+        system_prompt = {
+            "role": "system", 
+            "content": course_prompt
+        }
+        
+
+        chat_completion = clientCourse.chat.completions.create(
+            model="gpt-3.5-turbo",
+            messages=[system_prompt],
+            max_tokens=3000,
+            top_p=0.9
+        )
+        return chat_completion.choices[0].message.content.strip()
+    except Exception as e:
+        print(f"Error accessing OpenAI: {str(e)}")
+        return "There was an error processing your request."

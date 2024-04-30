@@ -127,7 +127,9 @@ AI Tutor
           {% for tutor in enrolled_tutors %}
           <tr>
             <td>{{ tutor.name }}</td>
-            <td><a href="{% url 'chat_with_tutor' tutor.id %}" target="_blank">Tutor Chatbot</a></td>
+            <td>
+              <a href="{% url 'chat_with_tutor' tutor.id %}" target="_blank" class="btn btn-warning">Tutor</a>
+          </td>
           </tr>
         {% endfor %}
         </tbody>

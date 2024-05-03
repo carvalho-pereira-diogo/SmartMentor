@@ -296,14 +296,20 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
 
                 # Add each selected PDF to the course
                 for pdf_id in selected_pdfs:
-                    pdf = PDF.objects.get(id=pdf_id)
+                    pdf = get_object_or_404(PDF, id=pdf_id)
                     course.pdfs.add(pdf)
+
+                # Create a quiz for the course
+                quiz = Quiz(course=course, name="Quiz for " + course.name, teacher=request.user.teacher)
+                quiz.save()
+
+                # Add the quiz to the teacher's quizzes list
+                request.user.teacher.quizzes.add(quiz)
 
             return redirect('teacher_courses')
         else:
             courses = self.get_queryset()
             return render(request, self.template_name, {'form': form, 'object_list': courses})
-
 
 @login_required
 def delete_course(request, course_id):
@@ -407,6 +413,10 @@ def unenroll_course(request, course_id):  # Change 'quiz_id' to 'course_id'
 
     if course in student_profile.courses.all():
         student_profile.courses.remove(course)
+        
+        quiz = get_object_or_404(Quiz, course=course)
+        if quiz in student_profile.quizzes.all():
+            student_profile.quizzes.remove(quiz)
 
     return redirect('student_courses')  # Redirect to an appropriate view after unenrollment Redirect to an appropriate view after unenrollment
 
@@ -563,6 +573,8 @@ class EnrollCourseView(LoginRequiredMixin, View):
             student_profile = request.user.profile.student
             if course not in student_profile.courses.all():
                 student_profile.courses.add(course)
+                quiz = get_object_or_404(Quiz, course=course)
+                student_profile.quizzes.add(quiz)
                 return redirect('student_courses')
             else:
                 return HttpResponseRedirect('/student/already_enrolled')
@@ -619,6 +631,23 @@ class EnrollTutorView(LoginRequiredMixin, View):
         student_profile.tutors.add(tutor)
         print("Enrollment successful.")
         return redirect('student_ai_tutor')
+    
+# Learning Path View
+class StudentLearningPathView(LoginRequiredMixin, ListView):
+    model = Course
+    template_name = 'app/student_learningpath.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
+            student_profile = self.request.user.profile.student
+            enrolled_courses = student_profile.courses.all()
+            all_courses = Course.objects.exclude(id__in=enrolled_courses.values_list('id', flat=True))
+        else:
+            all_courses = Course.objects.none()  # Show no courses if user is not authenticated or has no profile
+        context['all_courses'] = all_courses
+        context['enrolled_courses'] = enrolled_courses
+        return context
 
     
 

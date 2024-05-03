@@ -25,12 +25,6 @@ Teacher Courses
                                   <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
                               </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_quiz' %}">Quizzes</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_ai_tutor' %}">Tutor</a>
-                            </li>
-                            <li class="nav-item">
                                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
                                     {% csrf_token %}
                                     <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
@@ -105,6 +99,38 @@ Teacher Courses
                 </section>
             </div>
             <br />
+            <div class="container-xl">
+                <section>
+                    <h4>Quiz List</h4>
+                    {% if user.profile.teacher.quizzes.all %}
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Course</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for quiz in user.profile.teacher.quizzes.all %}
+                                    <tr>
+                                        <td>{{ quiz.name }}</td>
+                                        <td>{{ quiz.course.name }}</td>
+                                        <td>
+                                            <form method="post" action="{% url 'quiz_delete' quiz.id %}">
+                                                {% csrf_token %}
+                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    {% else %}
+                        <p>No quizzes created yet!</p>
+                    {% endif %}
+                </section>
+            </div>
             <br />
             <br />
             <br />

@@ -25,8 +25,8 @@ Student Quiz
                 <a class="nav-link" href="/student/quiz">Quizzes</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/student/ai_tutor">Tutor</a>
-              </li>
+                <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
+            </li>
               <li class="nav-item">
                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
                   {% csrf_token %}
@@ -38,44 +38,8 @@ Student Quiz
         </div>
       </nav>
 
-      <br/>
-
-      <div class="container-xl">
-        <section>
-            <h4>Available Quizzes</h4>
-            <p>Welcome, {{ user.profile.fname }} {{ user.profile.lname }}</p>
-            <p>Here, you can enroll in different quizzes.</p>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Quiz Name</th>
-                        <th>Description</th>
-                        <th>Course</th>
-                        <th>Action</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for quiz in all_quizzes %}
-                        <tr>
-                            <td>{{ quiz.name }}</td>
-                            <td>{{ quiz.description }}</td>
-                            <td>{{ quiz.course.name }}</td>
-                            <td>
-                                <form method="post" action="{% url 'enroll_quiz' %}">
-                                    {% csrf_token %}
-                                    <input type="hidden" name="quiz_id" value="{{ quiz.id }}">
-                                    <input type="submit" class="btn btn-warning" value="Enroll">
-                                </form>
-                            </td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-    </div>
-
     <br>
-
+    {% if enrolled_quizzes %}
     <div class="container-xl">
         <section>
             <h4>Enrolled Quizzes</h4>
@@ -86,7 +50,6 @@ Student Quiz
                         <th>Quiz Name</th>
                         <th>Description</th>
                         <th>Course</th>
-                        <th>Action</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -95,20 +58,23 @@ Student Quiz
                             <td>{{ quiz.name }}</td>
                             <td>{{ quiz.description }}</td>
                             <td>{{ quiz.course.name }}</td>
-                            <td>
-                                <form method="post" action="{% url 'unenroll_quiz' quiz.id %}">
-                                    {% csrf_token %}
-                                    <button type="submit" class="btn btn-warning">Unenroll</button>
-                                </form>
-                            </td>
                         </tr>
                     {% endfor %}
                 </tbody>
             </table>
         </section>
     </div>
+    {% else %}
+    <div class="container-xl">
+        <section>
+            <h4>Participate in a course! (To unlock quizzes)</h4>
+            <p>You are not enrolled in any quiz. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in a quiz.</p>
+        </section>
+    </div>
+    {% endif %}
     <br>
 
+    {% if enrolled_quizzes %}
     <div class="container-xl">
       <section>
         <h4>Start Communication</h4>
@@ -133,6 +99,7 @@ Student Quiz
         </table>
       </section>
     </div>
+{% endif %}
   
     <br>
     <br>

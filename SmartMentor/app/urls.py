@@ -27,6 +27,9 @@ urlpatterns = [
     path('enroll_course/', EnrollCourseView.as_view(), name='enroll_course'),
     path('unenroll_course/<int:course_id>/', views.unenroll_course, name='unenroll_course'),
     path('teacher/courses', TeacherCourseView.as_view(), name='teacher_courses'),
+    
+    path('student/learningpath', StudentLearningPathView.as_view(), name='course_learningpath'),
+    
     # Create course for teacher
     path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
     path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),

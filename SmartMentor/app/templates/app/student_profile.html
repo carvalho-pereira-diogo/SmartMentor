@@ -24,8 +24,8 @@ Student Profile
           <a class="nav-link" href="/student/quiz">Quizzes</a>
         </li>
         <li class="nav-item">
-          <a class="nav-link" href="/student/ai_tutor">Tutor</a>
-        </li>
+          <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
+      </li>
         <li class="nav-item">
           <form action="{% url 'logout' %}" method="post" style="margin: 0">
             {% csrf_token %}
@@ -63,20 +63,6 @@ Student Profile
        </form>
       </section>
     </div>
-    <br>
-    <div class="container-xl">
-      <section>
-          <h4>Course List:</h4>
-          <!-- Check if courses are empty-->
-          {% if user.profile.student.courses %}
-            {% for course in user.profile.student.courses.all %}
-            <p>- {{ course.name }}</p>
-            {% endfor %}
-          {% else %}
-            <p>No courses taken</p>
-          {% endif %}
-      </section>
-  </div>
   <br>
     <div class="container-xl">
       <section>

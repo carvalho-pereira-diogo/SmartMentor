@@ -25,7 +25,7 @@ Courses
                                 <a class="nav-link" href="{% url 'student_quiz' %}">Quizzes</a>
                             </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'student_ai_tutor' %}">Tutor</a>
+                                <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
                             </li>
                             <li class="nav-item">
                                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
@@ -103,30 +103,7 @@ Courses
                     </table>
                 </section>
             </div>
-            <br>    <div class="container-xl">
-                <section>
-                  <h4>Start Communication</h4>
-                  <p>Here are the links to participate in the different courses:</p>
-                  <table class="table table-striped">
-                    <thead>
-                      <tr>
-                        <th>Course Name</th>
-                        <th>Link</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {% for course in enrolled_courses %}
-                      <tr>
-                        <td>{{ course.name }}</td>
-                        <td>
-                            <a href="{% url 'chat_with_course' course.id %}" target="_blank" class="btn btn-warning">Course</a>
-                        </td>
-                      </tr>
-                    {% endfor %}
-                    </tbody>
-                  </table>
-                </section>
-              </div>
+      
             
               <br>
               <br>

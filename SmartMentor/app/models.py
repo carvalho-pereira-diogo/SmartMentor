@@ -85,8 +85,6 @@ class LearningPath(models.Model):
 class Quiz(models.Model):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
     name = models.CharField(max_length=255)
-    description = models.CharField(max_length=200, default='Default description')
-    pdfs = models.ManyToManyField(PDF, blank=True, related_name='quizzes')
     teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='quizzes', default=1)
     
     def __str__(self):

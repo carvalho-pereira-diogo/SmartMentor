@@ -24,7 +24,7 @@ from .models import Quiz, Course, PDF
 class QuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['name', 'description', 'course', 'pdfs']  # Assuming these fields exist
+        fields = ['name', 'course']  # Assuming these fields exist
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)
@@ -40,7 +40,7 @@ from .models import Quiz
 class SimpleQuizForm(forms.ModelForm):
     class Meta:
         model = Quiz
-        fields = ['name', 'description', 'course', 'pdfs']  # Assuming these are the fields
+        fields = ['name', 'course']  # Assuming these are the fields
 
     def __init__(self, *args, **kwargs):
         user = kwargs.pop('user', None)

@@ -1,0 +1,97 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Exams
+{% endblock %}
+
+{% block content %}
+    {% if user.is_authenticated %}
+        {% if user.profile.role == 'student' %}
+            <nav class="navbar navbar-expand-lg bg-body-tertiary">
+                <div class="container-fluid">
+                    <a class="navbar-brand" href="{% url 'home' %}">SmartMentor</a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_profile' %}">Profile</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'student_courses' %}">Courses</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
+                            </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="/student/quiz">Quizzes</a>
+                              </li>
+                            <li class="nav-item">
+                                <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+                            </li>
+                            <li class="nav-item">
+                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                    {% csrf_token %}
+                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                                </form>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+            </nav>
+
+            <br>
+
+            
+            <div class="container-xl">
+                <section>
+
+                    {% if enrolled_courses %}
+                    <h4>Participate in exams!</h4>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Course Name</th>
+                                <th>Description</th>
+                                <th>Exam</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in user.profile.student.courses.all %}
+                                <tr>
+                                    <td>{{ course.name }}</td>
+                                    <td>{{ course.description }}</td>
+                                    <td>
+                                        <a href="{% url 'chat_with_exam' course.id %}" target="_blank" class="btn btn-warning">Exam</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                    {% else %}
+                    <h4>Enroll in a course!</h4>
+                    <p>You are not enrolled in any course. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in an exam.</p>
+                    {% endif %}
+                </section>
+            </div>
+      
+            
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
+              <br>
+
+        {% else %}
+            <h1>Access Denied</h1>
+            <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
+        {% endif %}
+    {% else %}
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+    {% endif %}
+
+{% endblock %}

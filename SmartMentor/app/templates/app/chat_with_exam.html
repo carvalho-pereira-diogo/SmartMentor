@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Exam Page</title>
+</head>
+<body>
+    <h1>Exam for {{ course.name }}</h1>
+    <form method="post" action="">
+        {% csrf_token %}
+        {% for question in questions %}
+            <div>
+                <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
+                {% for option in question.options %}
+                    <label>
+                        <input type="radio" name="question_{{ forloop.parentloop.counter }}" value="{{ option.letter }}">
+                        {{ option.letter }}: {{ option.text }}
+                    </label><br>
+                {% endfor %}
+            </div>
+        {% endfor %}
+        <br>
+        <button type="submit">Submit Answers</button>
+    </form>
+</body>
+</html>

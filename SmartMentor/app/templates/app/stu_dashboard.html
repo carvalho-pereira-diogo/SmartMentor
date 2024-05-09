@@ -21,11 +21,14 @@ Student Dashboard
             <a class="nav-link" href="/student/courses">Courses</a>
           </li>
           <li class="nav-item">
-            <a class="nav-link" href="/student/quiz">Quizzes</a>
-          </li>
-          <li class="nav-item">
             <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
         </li>
+        <li class="nav-item">
+          <a class="nav-link" href="/student/quiz">Quizzes</a>
+        </li>
+        <li class="nav-item">
+          <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+      </li>
           <li class="nav-item">
             <form action="{% url 'logout' %}" method="post" style="margin: 0">
               {% csrf_token %}
@@ -71,17 +74,7 @@ Student Dashboard
                 From foundational knowledge to advanced topics, discover a library of courses designed to engage, challenge, and inspire you.</p>
         </section>
         </p>
-        <a href="/student/courses" class="btn btn-primary">Courses</a>
-    </div>
-    <div class="card-body">
-        <p class="card-text"><section>
-            <h2>Your Personal AI Chat Tutor</h2>
-            <p>Imagine having a tutor that’s available anytime you need, ready to answer your questions, clarify doubts, and guide you through complex concepts.<br>
-                SmartMentor’s AI Chat Tutor is exactly that.<br>
-                Leveraging the latest in natural language processing, our virtual tutor provides personalized academic support across a wide range of subjects, making learning more accessible and effective.</p>
-        </section>
-        </p>
-        <a href="/student/ai_tutor" class="btn btn-primary">Tutor</a>
+        <a href="/student/learningpath" class="btn btn-primary">Learning Path</a>
     </div>
     <div class="card-body">
         <p class="card-text"><section>

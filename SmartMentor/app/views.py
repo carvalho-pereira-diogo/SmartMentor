@@ -1,5 +1,6 @@
 import logging
 import os
+import PyPDF2
 import fitz 
 import json
 import openai
@@ -178,53 +179,8 @@ class TeacherQuizView(LoginRequiredMixin, ListView):
         else:
             return render(request, self.template_name, {'form': form, 'object_list': self.get_queryset(), 'errors': form.errors})
 
-def delete_quiz(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    if request.user.is_authenticated and hasattr(request.user, 'teacher') and quiz.teacher == request.user.teacher:
-        quiz.delete()
-        request.user.teacher.quiz_list.remove(quiz)
-    return redirect('teacher_quiz')
 
-class TeacherTutorView(LoginRequiredMixin, ListView):
-    model = Tutor
-    template_name = 'app/teacher_ai_tutor.html'
-    form_class = SimpleTutorForm  # Assume this is a simplified form
-    success_url = reverse_lazy('teacher_ai_tutor')
 
-    def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
-            return Tutor.objects.filter(teacher=self.request.user.teacher)
-        else:
-            return Tutor.objects.none()
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['tutor_form'] = self.form_class()  # No need to pass user here if the form is simplified
-        return context
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST, request.FILES)
-        if form.is_valid():
-            tutor = form.save(commit=False)
-            tutor.teacher = request.user.teacher
-            tutor.save()
-
-            # add tutor to teacher's tutor list
-            request.user.teacher.tutor_list.add(tutor)
-            tutor.save()
-
-            messages.success(request, "Tutor created successfully!")
-            return redirect(self.success_url)
-        else:
-            return render(request, self.template_name, {'form': form, 'object_list': self.get_queryset(), 'errors': form.errors})
-        
-
-def delete_tutor(request, tutor_id):
-    tutor = get_object_or_404(Tutor, id=tutor_id)
-    if request.user.is_authenticated and hasattr(request.user, 'teacher') and tutor.teacher == request.user.teacher:
-        tutor.delete()
-        request.user.teacher.tutor_list.remove(tutor)
-    return redirect('teacher_ai_tutor')
 class TeacherPDFView(LoginRequiredMixin, ListView):
     model = PDF
     form_class = PDFUploadForm
@@ -317,8 +273,11 @@ def delete_course(request, course_id):
     if request.user.is_authenticated:
         if hasattr(request.user, 'teacher'):
             if course.teacher == request.user.teacher:
+                Quiz.objects.filter(course=course).delete()
                 course.delete()
                 print(f"Course {course_id} deleted.")
+                # delete quizzes associated with the course
+                
             else:
                 print(f"The course's teacher is not the same as the user's teacher. Course teacher: {course.teacher}, User's teacher: {request.user.teacher}")
         else:
@@ -386,26 +345,12 @@ def unenroll_quiz(request, quiz_id):  # Add the quiz_id parameter here
 
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
-from .models import Tutor, Student
-
-@login_required
-def unenroll_tutor(request, tutor_id):  # Function to handle unenrollment
-    student_profile = request.user.profile.student  # Access the student profile
-    tutor = get_object_or_404(Tutor, id=tutor_id)  # Get the tutor instance
-
-    # Check if the student is enrolled in the tutor and remove if they are
-    if tutor in student_profile.tutors.all():
-        student_profile.tutors.remove(tutor)
-
-    return redirect('student_ai_tutor')  # Redirect to a view showing all tutors for the student
- # Redirect to the page where courses are listed or another appropriate page.
 
 
 from django.shortcuts import get_object_or_404, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Quiz, Student
 
-@login_required
 @login_required
 def unenroll_course(request, course_id):  # Change 'quiz_id' to 'course_id'
     student_profile = request.user.profile.student
@@ -477,34 +422,6 @@ class StudentQuizView(LoginRequiredMixin, ListView):
                 return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario
         return HttpResponseRedirect('/error') 
     
-class StudentTutorView(LoginRequiredMixin, ListView):
-    model = Tutor
-    template_name = 'app/student_ai_tutor.html'
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile') and hasattr(self.request.user.profile, 'student'):
-            student_profile = self.request.user.profile.student
-            enrolled_tutors = student_profile.tutors.all()
-            all_tutors = Tutor.objects.exclude(id__in=enrolled_tutors.values_list('id', flat=True))
-        else:
-            all_tutors = Tutor.objects.none()  # Show no tutors if user is not authenticated or has no student profile
-        context['all_tutors'] = all_tutors
-        context['enrolled_tutors'] = enrolled_tutors
-        context['form'] = TutorEnrollmentForm(user=self.request.user)  # Adjust form as necessary
-        return context
-
-    def post(self, request, *args, **kwargs):
-        selected_tutor_id = request.POST.get('tutor')
-        if selected_tutor_id:
-            tutor = get_object_or_404(Tutor, id=selected_tutor_id)
-            student_profile = request.user.profile.student
-            if tutor not in student_profile.tutors.all():
-                student_profile.tutors.add(tutor)  # Add the tutor to the student's list of enrolled tutors
-                return HttpResponseRedirect('.')  # Redirect to the current URL
-            else:
-                return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario
-        return HttpResponseRedirect('/error')
 class StudentCourseView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/student_course.html'
@@ -585,8 +502,6 @@ from django.shortcuts import redirect, get_object_or_404
 from django.http import HttpResponseRedirect
 from django.views import View
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Quiz, Student  # Ensure these are correctly imported
-
 from django.contrib.auth.decorators import login_required
 
 class EnrollQuizView(LoginRequiredMixin, View):
@@ -608,34 +523,28 @@ from django.views import View
 from django.shortcuts import get_object_or_404, redirect
 from django.http import HttpResponseRedirect
 from django.contrib.auth.mixins import LoginRequiredMixin
-from .models import Tutor
 
-class EnrollTutorView(LoginRequiredMixin, View):
-    def post(self, request, *args, **kwargs):
-        print("User authenticated:", request.user.is_authenticated)
-        tutor_id = request.POST.get('tutor_id')
-        print("Tutor ID received:", tutor_id)
-
-        if not tutor_id:
-            print("No tutor ID provided.")
-            return HttpResponseRedirect('/error')
-
-        tutor = get_object_or_404(Tutor, id=tutor_id)
-        student_profile = request.user.profile.student
-        print("Attempting to enroll in tutor:", tutor.name)
-
-        if tutor in student_profile.tutors.all():
-            print("Already enrolled with this tutor.")
-            return HttpResponseRedirect('/student/already_enrolled')
-
-        student_profile.tutors.add(tutor)
-        print("Enrollment successful.")
-        return redirect('student_ai_tutor')
     
 # Learning Path View
 class StudentLearningPathView(LoginRequiredMixin, ListView):
     model = Course
     template_name = 'app/student_learningpath.html'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        if self.request.user.is_authenticated and hasattr(self.request.user, 'profile'):
+            student_profile = self.request.user.profile.student
+            enrolled_courses = student_profile.courses.all()
+            all_courses = Course.objects.exclude(id__in=enrolled_courses.values_list('id', flat=True))
+        else:
+            all_courses = Course.objects.none()  # Show no courses if user is not authenticated or has no profile
+        context['all_courses'] = all_courses
+        context['enrolled_courses'] = enrolled_courses
+        return context
+    
+class StudentExamView(LoginRequiredMixin, ListView):
+    model = Course
+    template_name = 'app/student_exam.html'
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
@@ -656,6 +565,82 @@ def stu_dashboard(request):
 
 def te_dashboard(request):
     return render(request, 'app/te_dashboard.html')
+
+#Exam section
+from django.shortcuts import render
+from .models import Course  # Assuming you have a Course model
+
+def generate_quiz_from_url(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    # Extract text from pdf under courses.pdfs
+    pdf_path = course.pdfs.first().file.path
+    text = extract_text_from_pdf(pdf_path)
+    questions = generate_questions_and_choices(text)
+    
+    if request.method == 'POST':
+        return grade_quiz(request, questions)
+    
+    return render(request, "chat_with_exam.html", {"questions": questions})
+
+def grade_quiz(request, questions):
+    score = 0
+    total = len(questions)
+
+    for question in questions:
+        user_answer = request.POST.get(str(question['id']))
+        if user_answer == question['correct_answer']:
+            score += 1
+
+    percentage = score / total * 100
+    update_student_role(request.user, percentage)  # Assuming the user is a student
+
+    return render(request, "quiz_results.html", {"score": score, "total": total, "percentage": percentage})
+
+def update_student_role(student, percentage):
+    if percentage <= 75:
+        role = 'beginner'
+    elif 76 <= percentage <= 90:
+        role = 'intermediate'
+    else:
+        role = 'advanced'
+
+    student.profile.role = role  # Assuming the student has a profile attribute with a role
+    student.profile.save()
+    
+# Generate questions and choices
+import random
+
+def generate_questions_and_choices(text):
+    # Split the text into lines
+    lines = text.split('\n')
+
+    # Initialize empty list to store questions
+    questions = []
+
+    # Iterate over the lines and extract questions and choices
+    current_question = None
+    for line in lines:
+        line = line.strip()
+        if line.endswith('?'):
+            # This is a question
+            current_question = {
+                'question': line,
+                'choices': []
+            }
+            questions.append(current_question)
+        elif current_question is not None and line:
+            # This is a choice
+            current_question['choices'].append(line)
+
+    # Shuffle the choices for each question
+    for question in questions:
+        random.shuffle(question['choices'])
+
+    return questions
+
+
+
+###---------------------------------###
 
 # Crete me a function to get the different information of a student 
 #From this function
@@ -681,10 +666,11 @@ def get_student_info(request):
 import json
 from django.http import JsonResponse
 from django.shortcuts import render
-from .models import Tutor
 from PyPDF2 import PdfReader
 
 from openai import OpenAI
+"""
+
 clientTutor = OpenAI(api_key=settings.OPENAI_API_KEY_TUTOR)
 
 def get_pdf_text_tutor(tutor_id):
@@ -772,7 +758,7 @@ def tutor_view(request, tutor_id):
         return JsonResponse({'message': message, 'response': response})
 
     return render(request, 'app/chat_with_tutor.html', {'tutor': tutor})
-
+"""
 # Quiz section
 clientQuiz = OpenAI(api_key=settings.OPENAI_API_KEY_QUIZ)
 
@@ -819,7 +805,6 @@ def ask_openai_for_quiz(request, message, quiz_id, questions):
                 
         
         quiz_name = quiz.name
-        quiz_description = quiz.description
         
         student_questions = questions
         
@@ -836,7 +821,6 @@ def ask_openai_for_quiz(request, message, quiz_id, questions):
         quiz_prompt="""
             Your information:\
             -Quiz Name: {quiz_name}\
-            -Quiz Description: {quiz_description}\
             \
             Student information:\
             -All user inputs:\
@@ -903,146 +887,282 @@ def ask_openai_for_quiz(request, message, quiz_id, questions):
         print(f"Error accessing OpenAI: {str(e)}")
         return "There was an error processing your request."
     
-    
-def generate_questions(request, quiz_id):
-    quiz = get_object_or_404(Quiz, pk=quiz_id)
-    pdf_text = get_pdf_text_quiz(quiz_id)
-    response = ask_openai_for_quiz(request, "", pdf_text, quiz_id)
-    add_response_to_memory_quiz(response, request.user.id)
-    return JsonResponse({'response': response})
 
-def ask_openai_questions(quiz_id):
-    try:
-        quiz = Quiz.objects.get(pk=quiz_id)
-        #read the pdf text from the quiz
-        pdf_text = get_pdf_text_quiz(quiz_id)
-        #print(pdf_text)
-        quiz_description = quiz.description
-        
-        quiz_prompt="""
-            You create a list of questions, so that an other agent can determine which question to take.
-            Based on the information: {pdf_text} you should create 50 questions.\
-                
-            Example of a question:\
-            (Question: "What is the capital of France?"\
-            "1": "Paris",\
-            "2": "Berlin",\
-            "3": "Lisbon",\
-            "4": "Luxembourg",)\
-            <end>\
-                
-            Return the list of questions. <end> split the questions.\
-        """
-        
-        system_prompt = {
-            "role": "system", 
-            "content": quiz_prompt
-        }
-        
+memoryQuiz = {}
 
-        chat_completion = clientQuiz.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[system_prompt],
-            max_tokens=3000,
-            top_p=0.9
-        )
-        return chat_completion.choices[0].message.content.strip()
-    except Exception as e:
-        print(f"Error accessing OpenAI: {str(e)}")
-        return "There was an error processing your request."
-    
-def get_questions(response):
-    #return a list of questions use split to divide the questions with <end>
-    return response.split("<end>")
+def add_message_to_memory_quiz(message, user_id):
+    if user_id not in memoryQuiz:
+        memoryQuiz[user_id] = []
+    memoryQuiz[user_id].append(message)
     
 def quiz_view(request, quiz_id):
     quiz = get_object_or_404(Quiz, pk=quiz_id)
-    questions = get_questions(ask_openai_questions(quiz_id))
-    print(f"Questions: {questions}")
-    if request.method == 'POST':
-        message = request.POST.get('message')
-        add_message_to_memory_quiz(message, request.user.id)
-        response = ask_openai_for_quiz(request, message, quiz_id, questions)
-        add_response_to_memory_quiz(response, request.user.id)
-        return JsonResponse({'message': message, 'response': response})
+    pdf_files = quiz.course.pdfs.all()
+
+    if not pdf_files:
+        return JsonResponse({"error": "No PDF files found for the course."}, status=404)
+
+    try:
+        pdfreader = PdfReader(pdf_files[0].file.path)
+        raw_text = ''.join(page.extract_text() or '' for page in pdfreader.pages)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_text(raw_text)
+    del chunks[:10]
+
+    if not chunks:
+        return JsonResponse({"error": "No text could be extracted from the PDF."}, status=404)
+
     
+
+    if request.method == 'POST':
+        message = request.POST.get('message', '').strip().lower()
+        
+        #Take randomly 1/4 of the chunks
+        random_chunks = random.sample(chunks, len(chunks)//4)
+
+        if message == "question":
+            prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file."
+            
+        elif message == "a":
+            #Check last response and correct it
+            last_response = memoryResponses_quiz[request.user.id][-1]
+            #Prompt a correction where it check the answer a to the last question
+            prompt_text = f"Answer: a, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+        
+        elif message == "b":
+            #Check last response and correct it
+            last_response = memoryResponses_quiz[request.user.id][-1]
+            #Prompt a correction where it check the answer a to the last question
+            prompt_text = f"Answer: b, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+        
+        elif message == "c":
+            #Check last response and correct it
+            last_response = memoryResponses_quiz[request.user.id][-1]
+            #Prompt a correction where it check the answer a to the last question
+            prompt_text = f"Answer: c, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+        
+        elif message == "d":
+            #Check last response and correct it
+            last_response = memoryResponses_quiz[request.user.id][-1]
+            #Prompt a correction where it check the answer a to the last question
+            prompt_text = f"Answer: d, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+        
+        else :
+            prompt_text = f"You should tell the student that he can only reply with 'question' or 'a', 'b', 'c', 'd', Do not provide information that is not about the topic in the , this means you should not provide information that is not in the text: {random_chunks[0]}. DO NOT EXPLAIN QUESTIONS THAT ARE NOT RELATED."
+                       
+            
+        system_prompt = {
+            "role": "system", 
+            "content": prompt_text
+        }
+        
+        user_prompt = {"role": "user", "content": message}
+
+        chat_completion = clientCourse.chat.completions.create(
+            model="gpt-4",
+            messages=[system_prompt, user_prompt],
+            max_tokens=250,
+            top_p=0.9
+        )
+        
+        response = chat_completion.choices[0].message.content.strip()
+        add_response_to_memory_quiz(response, request.user.id)
+        
+        
+        return JsonResponse({'message': message, 'response': response})
+
     return render(request, 'app/chat_with_quiz.html', {'quiz': quiz})
 
-#Course sections
-clientCourse= OpenAI(api_key=settings.OPENAI_API_KEY_COURSE)
+#Course section
 
-def get_pdf_text_course(course_id):
-    try:
-        course = Course.objects.get(pk=course_id)
-        pdf_files = course.pdfs.all()  # Assuming pdfs is a related name for file fields
-        text_content = ""
-        for pdf_file in pdf_files:
-            reader = PdfReader(pdf_file.file.path)
-            for page in reader.pages:
-                text_content += page.extract_text() + "\n"
-        return text_content
-    except Exception as e:
-        print(f"Error reading PDFs: {str(e)}")
-        return ""
-    
-    
-#Create a list for memory and always delete the oldest one after 3 messages got added
-memoryCourse = {}
 
-def add_message_to_memory_course(message, user_id):
-    if user_id not in memoryCourse:
-        memoryCourse[user_id] = []
-    memoryCourse[user_id].append(message)
-    if len(memoryCourse[user_id]) > 3:
-        memoryCourse[user_id].pop(0)
+
+
+
+from PyPDF2 import PdfReader
+from langchain_openai import OpenAIEmbeddings
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_community.vectorstores import FAISS
+
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+#from langchain.embeddings import SentenceTransformerEmbeddingsfrom django.http import JsonResponse
+from django.shortcuts import render, get_object_or_404
+from django.conf import settings
+from PyPDF2 import PdfReader
+from langchain.text_splitter import CharacterTextSplitter
+from langchain_openai import ChatOpenAI  # Ensure correct import path
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+from openai import OpenAI
+
+clientCourse = OpenAI(api_key=settings.OPENAI_API_KEY_COURSE)
 
 def course_view(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
-    
-    if request.method == 'POST':
-        message = request.POST.get('message')
-        add_message_to_memory_tutor(message, request.user.id)
-        topics = ask_openai_for_topics(request, course_id)
-        print(f"Topics: {topics}")
-        #response = ask_openai_for_tutor(request, message, pdf_text, tutor_id)
-        response = "This is a placeholder."
-        return JsonResponse({'message': message, 'response': response})
+    pdf_files = course.pdfs.all()
 
-    return render(request, 'app/chat_with_course.html', {'course': course})
+    if not pdf_files:
+        return JsonResponse({"error": "No PDF files found for the course."}, status=404)
 
-#Create topics list for the course
-def ask_openai_for_topics(request, course_id):
     try:
-        course = Course.objects.get(pk=course_id)
-        pdf_text = get_pdf_text_course(course_id)
-        course_description = course.description
-        
-        course_prompt="""
-            You create a list of topics, so that an other agent can determine which topic to take.\
-            Description of course: {course_description}\
-            Based on the information: {pdf_text} you should create a list of topics that are based in the information.\
-            Create as many topics as you can related to the information.\
-            \
-            Return me a list of topics in python structure:\
-            Example:\
-            ["lists", "types", "for loops"]\
-                
-            As output just return the list of topics.\
-        """
-        
+        pdfreader = PdfReader(pdf_files[0].file.path)
+        raw_text = ''.join(page.extract_text() or '' for page in pdfreader.pages)
+    except Exception as e:
+        return JsonResponse({"error": str(e)}, status=500)
+
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_text(raw_text)
+    del chunks[:10]
+
+    if not chunks:
+        return JsonResponse({"error": "No text could be extracted from the PDF."}, status=404)
+
+    # Initialize session data if not already present
+    if 'course_interaction' not in request.session:
+        request.session['course_interaction'] = {
+            'current_chunk_index': 0,
+            'total_chunks': len(chunks),
+            'last_response': '',
+            'detail_level': 1,
+        }
+    session_data = request.session['course_interaction']
+
+
+    if request.method == 'POST':
+        message = request.POST.get('message', '').strip().lower()
+        current_chunk_index = session_data.get('current_chunk_index', 0)
+        current_chunk = chunks[current_chunk_index] if chunks else "No content available."
+
+        prompt_text = f"You are a friendly student assistant which helps student out in their learning journey, answer the question based on the input of student: {message}\n\n an the text:{current_chunk}, EVERYTHING ELSE IS NOT ALLOWED."
+
+        if message == "start":
+            session_data['current_chunk_index'] = 0
+            session_data['detail_level'] = 1
+            session_data['last_response'] = ''
+            request.session.modified = True
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+        elif message == "next":
+            if current_chunk_index < len(chunks) - 1:
+                session_data['current_chunk_index'] += 1
+                request.session.modified = True  # Mark session as modified to save changes
+            current_chunk = chunks[session_data['current_chunk_index']]
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+        elif message == "prev":
+            if current_chunk_index > 0:
+                session_data['current_chunk_index'] -= 1
+                request.session.modified = True
+            current_chunk = chunks[session_data['current_chunk_index']]
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+            
         system_prompt = {
             "role": "system", 
-            "content": course_prompt
+            "content": prompt_text
         }
         
+        user_prompt = {"role": "user", "content": message}
 
         chat_completion = clientCourse.chat.completions.create(
-            model="gpt-3.5-turbo",
-            messages=[system_prompt],
-            max_tokens=3000,
+            model="gpt-4",
+            messages=[system_prompt, user_prompt],
+            max_tokens=1000,
             top_p=0.9
         )
-        return chat_completion.choices[0].message.content.strip()
+        response = chat_completion.choices[0].message.content.strip()
+        
+        session_data['last_response'] = response
+        request.session['course_interaction'] = session_data
+        return JsonResponse({'message': message, 'response': response, 'current_chunk': current_chunk})
+
+    return render(request, 'app/chat_with_course.html', {'course': course})
+import random
+import json
+from django.shortcuts import render, get_object_or_404
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.conf import settings
+from PyPDF2 import PdfReader
+from langchain.text_splitter import CharacterTextSplitter
+import openai
+
+# Ensure your OpenAI client is initialized correctly
+clientTutor = openai.OpenAI(api_key=settings.OPENAI_API_KEY_TUTOR)
+
+def exam_view(request, course_id):
+    course = get_object_or_404(Course, pk=course_id)
+    pdf_files = course.pdfs.all()
+
+    if not pdf_files:
+        return JsonResponse({"error": "No PDF files found for the course."}, status=404)
+
+    try:
+        pdfreader = PdfReader(pdf_files[0].file.path)
+        raw_text = ''.join(page.extract_text() or '' for page in pdfreader.pages)
     except Exception as e:
-        print(f"Error accessing OpenAI: {str(e)}")
-        return "There was an error processing your request."
+        return JsonResponse({"error": str(e)}, status=500)
+
+    text_splitter = CharacterTextSplitter(separator="\n", chunk_size=1000, chunk_overlap=200)
+    chunks = text_splitter.split_text(raw_text)
+    if len(chunks) <= 10:
+        return JsonResponse({"error": "Not enough text to generate questions from."}, status=404)
+
+    selected_chunk = random.choice(chunks)
+
+    prompt_text = f"""
+    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries.
+
+    Text: "{selected_chunk}"
+
+    EXAMPLE FORMAT:
+    [
+        {{"text": "What is the capital of France?", "options": [
+            {{"letter": "A", "text": "Paris", "is_correct": True}},
+            {{"letter": "B", "text": "London", "is_correct": False}},
+            {{"letter": "C", "text": "Berlin", "is_correct": False}},
+            {{"letter": "D", "text": "Madrid", "is_correct": False}}
+        ]}},
+        # More questions should follow in a similar format
+    ]
+    
+    RETURN JSON RESPONSE WITH THE QUESTIONS
+    """
+    
+    system_prompt = {
+        "role": "system", 
+        "content": prompt_text
+    }
+    
+    messages = [system_prompt]
+    # Assuming you've setup OpenAI API client
+    try:
+        chat_completion = clientTutor.chat.completions.create(
+            model="gpt-4-turbo-preview",
+            messages=messages,
+            max_tokens=2500,
+            response_format={ "type": "json_object" }
+        )
+          
+        
+        questions = chat_completion.choices[0].message.content
+        print(f"Questions: {questions}")
+        response = json.loads(questions)
+        questions = response['questions']
+    except Exception as e:
+        return JsonResponse({"error": "Failed to generate questions: " + str(e)}, status=500)
+    
+    
+    
+    if request.method == 'POST':
+        score = 0
+        for i, question in enumerate(questions, start=1):
+            answer = request.POST.get(f'question_{i}')
+            correct_option = next((o for o in question['options'] if o['is_correct']), None)
+            if correct_option and correct_option['letter'] == answer:
+                score += 1
+        return JsonResponse({"score": score, "total": len(questions)})
+
+    return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
+
+
+    

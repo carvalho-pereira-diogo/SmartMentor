@@ -22,11 +22,14 @@ AI Tutor
               <a class="nav-link" href="/student/courses">Courses</a>
             </li>
             <li class="nav-item">
-              <a class="nav-link" href="/student/quiz">Quizzes</a>
-            </li>
-            <li class="nav-item">
               <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
           </li>
+          <li class="nav-item">
+            <a class="nav-link" href="/student/quiz">Quizzes</a>
+          </li>
+          <li class="nav-item">
+            <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+        </li>
             <li class="nav-item">
               <form action="{% url 'logout' %}" method="post" style="margin: 0">
                 {% csrf_token %}

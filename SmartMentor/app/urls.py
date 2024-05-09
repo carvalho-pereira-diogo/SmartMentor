@@ -29,11 +29,17 @@ urlpatterns = [
     path('teacher/courses', TeacherCourseView.as_view(), name='teacher_courses'),
     
     path('student/learningpath', StudentLearningPathView.as_view(), name='course_learningpath'),
+
+    path('student/exam', StudentExamView.as_view(), name='course_exam'),
+    path('student/exam/<int:course_id>/', views.exam_view, name='chat_with_exam'),
+    
+    
     
     # Create course for teacher
     path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
     path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),
     path('student/course/chat/<int:course_id>/', views.course_view, name='chat_with_course'),
+    
     
     path('teacher/pdfs/delete/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
@@ -47,14 +53,5 @@ urlpatterns = [
     path('unenroll_quiz/<int:quiz_id>/', views.unenroll_quiz, name='unenroll_quiz'),
     path('teacher/quiz', TeacherQuizView.as_view(), name='teacher_quiz'),
     path('teacher/quiz/create', TeacherQuizView.as_view(), name='quiz_create'),
-    path('teacher/quiz/delete/<int:quiz_id>/', views.delete_quiz, name='quiz_delete'),
 
-    path('student/ai_tutor', StudentTutorView.as_view(), name='student_ai_tutor'),
-    path('student/ai_tutor/chat/<int:tutor_id>/', views.tutor_view, name='chat_with_tutor'),
-    
-    path('enroll_tutor/', EnrollTutorView.as_view(), name='enroll_ai_tutor'),
-    path('unenroll_tutor/<int:tutor_id>/', views.unenroll_tutor, name='unenroll_ai_tutor'),
-    path('teacher/ai_tutor', TeacherTutorView.as_view(), name='teacher_ai_tutor'),
-    path('teacher/ai_tutor/create', TeacherTutorView.as_view(), name='tutor_create'),
-    path('teacher/tutor/delete/<int:tutor_id>/', views.delete_tutor, name='tutor_delete'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

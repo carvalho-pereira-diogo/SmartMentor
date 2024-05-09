@@ -21,8 +21,6 @@ class Student(models.Model):
     level = models.CharField(max_length=10, default='beginner')
     courses = models.ManyToManyField('Course', related_name='enrolled_students')
     quizzes = models.ManyToManyField('Quiz', related_name='enrolled_students')
-    tutors = models.ManyToManyField('Tutor', related_name='enrolled_students')
-    
     def __str__(self):
         return self.profile.username
     
@@ -40,8 +38,6 @@ class Teacher(models.Model):
     pdfs = models.ManyToManyField(PDF, related_name='teachers')
     courses_list = models.ManyToManyField('Course', related_name='courses', through='LearningPath')
     quiz_list = models.ManyToManyField('Quiz', related_name='quizzes', through='QuizEnrollment')
-    tutor_list = models.ManyToManyField('Tutor', related_name='tutors', through='TutorEnrollment')
-    
     def __str__(self):
         return self.profile.username
 
@@ -112,26 +108,3 @@ class QuizScore(models.Model):
 
     def __str__(self):
         return f'{self.student} scored {self.score} on {self.quiz}'
-
-
-class Tutor(models.Model):
-    course = models.ForeignKey(Course, on_delete=models.CASCADE, null=True)
-    name = models.CharField(max_length=255)
-    description = models.CharField(max_length=200, default='Default description')
-    pdfs = models.ManyToManyField(PDF, blank=True, related_name='tutors')
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='tutors', default=1)
-    
-    def __str__(self):
-        return self.name
-    
-class TutorEnrollment(models.Model):
-    student = models.ForeignKey(Student, on_delete=models.CASCADE, null = True)
-    tutor = models.ForeignKey(Tutor, on_delete=models.CASCADE)
-    date_enrolled = models.DateTimeField(default=timezone.now)
-    teacher = models.ForeignKey(Teacher, on_delete=models.CASCADE, related_name='tutor_enrollments', default=1)
-
-    class Meta:
-        unique_together = ('student', 'tutor')
-
-    def __str__(self):
-        return f'{self.student} enrolled in {self.tutor}'

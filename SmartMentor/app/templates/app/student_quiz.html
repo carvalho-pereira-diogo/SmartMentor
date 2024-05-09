@@ -22,11 +22,14 @@ Student Quiz
                 <a class="nav-link" href="/student/courses">Courses</a>
               </li>
               <li class="nav-item">
-                <a class="nav-link" href="/student/quiz">Quizzes</a>
-              </li>
-              <li class="nav-item">
                 <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
             </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/student/quiz">Quizzes</a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+          </li>
               <li class="nav-item">
                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
                   {% csrf_token %}
@@ -48,7 +51,6 @@ Student Quiz
                 <thead>
                     <tr>
                         <th>Quiz Name</th>
-                        <th>Description</th>
                         <th>Course</th>
                     </tr>
                 </thead>
@@ -56,7 +58,6 @@ Student Quiz
                     {% for quiz in enrolled_quizzes %}
                         <tr>
                             <td>{{ quiz.name }}</td>
-                            <td>{{ quiz.description }}</td>
                             <td>{{ quiz.course.name }}</td>
                         </tr>
                     {% endfor %}

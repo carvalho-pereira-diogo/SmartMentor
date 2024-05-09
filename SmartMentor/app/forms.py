@@ -16,7 +16,7 @@ class CourseForm(forms.ModelForm):
         fields = ['name', 'description', 'pdfs']
         
 from django import forms
-from .models import Quiz, QuizEnrollment, QuizScore, Tutor
+from .models import Quiz, QuizEnrollment, QuizScore
 
 from django import forms
 from .models import Quiz, Course, PDF
@@ -68,7 +68,6 @@ class QuizScoreForm(forms.ModelForm):
     class Meta:
         model = QuizScore
         fields = ['student', 'quiz', 'score']
-# Replace with the actual fields of the Tutor model
         
 class LearningPathForm(forms.ModelForm):
     class Meta:
@@ -81,35 +80,6 @@ class TeacherForm(forms.ModelForm):
         model = Teacher
         fields = '__all__'
         
-class SimpleTutorForm(forms.ModelForm):
-    #do it like SimleQuizForm
-    class Meta:
-        model = Tutor
-        fields = ['name', 'course']
-        
-class TutorForm(forms.ModelForm):
-    
-    class Meta:
-        model = Tutor
-        fields = '__all__'
-    
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super(TutorForm, self).__init__(*args, **kwargs)
-        if user is not None:
-            self.fields['course'].queryset = Course.objects.filter(teacher=user.teacher)
-
-class TutorEnrollmentForm(forms.ModelForm):
-    class Meta:
-        model = TutorEnrollment
-        fields = ['tutor']
-
-    def __init__(self, *args, **kwargs):
-        user = kwargs.pop('user', None)
-        super().__init__(*args, **kwargs)
-        if user and user.is_authenticated and hasattr(user, 'teacher'):
-            teacher_tutors = Tutor.objects.filter(teacher=user.teacher)
-            self.fields['tutor'].queryset = teacher_tutors
 
 # In forms.py
 class UploadFileForm(forms.ModelForm):

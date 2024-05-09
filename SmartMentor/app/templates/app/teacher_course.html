@@ -108,7 +108,6 @@ Teacher Courses
                                 <tr>
                                     <th>Name</th>
                                     <th>Course</th>
-                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -116,12 +115,6 @@ Teacher Courses
                                     <tr>
                                         <td>{{ quiz.name }}</td>
                                         <td>{{ quiz.course.name }}</td>
-                                        <td>
-                                            <form method="post" action="{% url 'quiz_delete' quiz.id %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                            </form>
-                                        </td>
                                     </tr>
                                 {% endfor %}
                             </tbody>

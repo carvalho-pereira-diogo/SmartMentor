@@ -15,10 +15,18 @@ class Profile(models.Model):
     def __str__(self):
         return self.username
     
+    
+class Score(models.Model):
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    date = models.DateField(auto_now_add=True)
+    value = models.IntegerField()
+    level = models.CharField(max_length=20, default='beginner')
+    
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)
     profile = models.OneToOneField(Profile, on_delete=models.CASCADE)
-    level = models.CharField(max_length=10, default='beginner')
+    scores = models.ManyToManyField(Score, related_name='students')
     courses = models.ManyToManyField('Course', related_name='enrolled_students')
     quizzes = models.ManyToManyField('Quiz', related_name='enrolled_students')
     def __str__(self):
@@ -108,3 +116,4 @@ class QuizScore(models.Model):
 
     def __str__(self):
         return f'{self.student} scored {self.score} on {self.quiz}'
+    

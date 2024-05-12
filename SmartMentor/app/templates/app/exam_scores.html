@@ -1,7 +1,7 @@
-{% extends "app/base.html" %}
+{% extends 'app/base.html' %}
 
 {% block title %}
-Exams
+Exam Solutions
 {% endblock %}
 
 {% block content %}
@@ -26,9 +26,9 @@ Exams
                             </li>
                             <li class="nav-item">
                                 <a class="nav-link" href="/student/quiz">Quizzes</a>
-                              </li>
+                            </li>
                             <li class="nav-item">
-                                <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+                                <a class="nav-link" href="{% url 'course_exam'%}">Exams</a>
                             </li>
                             <li class="nav-item">
                                 <form action="{% url 'logout' %}" method="post" style="margin: 0">
@@ -42,71 +42,34 @@ Exams
             </nav>
 
             <br>
-
-            
             <div class="container-xl">
                 <section>
-
-                    {% if enrolled_courses %}
-                    <h4>Participate in exams!</h4>
-                    <table class="table table-striped">
+                    <h4>Scores for {{ course.name }}</h4>
+                    <table class="table">
                         <thead>
                             <tr>
-                                <th>Course Name</th>
-                                <th>Description</th>
-                                <th>Exam</th>
+                                <th>Date</th>
+                                <th>Score</th>
                             </tr>
                         </thead>
                         <tbody>
-                            {% for course in user.profile.student.courses.all %}
-                                <tr>
-                                    <td>{{ course.name }}</td>
-                                    <td>{{ course.description }}</td>
-                                    <td>
-                                        <a href="{% url 'chat_with_exam' course.id %}" target="_blank" class="btn btn-warning">Exam</a>
-                                    </td>
-                                </tr>
-                            {% endfor %}
+                            {% for score in scores %}
+                        <tr>
+                            <td>{{ score.date }}</td>
+                            <td>{{ score.value }}</td>
+                        </tr>
+                        {% endfor %}
                         </tbody>
                     </table>
-                    <div class="container-xl">
-                        <section>
-                            <h4>Check for solutions of exam!</h4>
-                            <p>Here are the exams you have participated in:</p>
-                            {% for course in user.profile.student.courses.all %}
-                                <!-- redirect to exam_scores -->
-                                <a href="{% url 'exam_scores' course.id %}" target="_blank" class="btn btn-warning">Solutions for {{ course.name }}</a>
-                            {% endfor %}
-                        </section>
-                    </div>
-                    {% else %}
-                    <h4>Enroll in a course!</h4>
-                    <p>You are not enrolled in any course. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in an exam.</p>
-                    {% endif %}
+                    <br>
+                    
+                    <h4>Student Level: {{ level }}</h4>
+                    <h5>How it is calculated:</h5>
+                    <p>Student level is calculated based on the average score of all exams taken by the student.</p>
+                    <p>Average: 0-74 = Beginner, 75-89 = Intermediate, 90-100 = Advanced</p>
+
                 </section>
             </div>
-
-            <br>
-
-            
-            
-      
-            
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
-
-        {% else %}
-            <h1>Access Denied</h1>
-            <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
         {% endif %}
-    {% else %}
-        <h1>Access Denied</h1>
-        <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
     {% endif %}
-
 {% endblock %}

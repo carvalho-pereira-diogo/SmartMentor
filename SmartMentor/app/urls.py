@@ -32,6 +32,7 @@ urlpatterns = [
 
     path('student/exam', StudentExamView.as_view(), name='course_exam'),
     path('student/exam/<int:course_id>/', views.exam_view, name='chat_with_exam'),
+    path('student/exam/scores/<int:course_id>/', views.display_scores, name='exam_scores'),
     
     
     

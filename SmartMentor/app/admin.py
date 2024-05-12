@@ -5,14 +5,13 @@ from .models import *
 admin.site.register(Profile)
 
 class StudentAdmin(admin.ModelAdmin):
-    list_display = ('get_username', 'level')
+    list_display = ('get_username',)  # add a comma to make it a tuple
 
-    # Using a method to safely access the username
     def get_username(self, obj):
         return obj.profile.user.username if obj.profile and obj.profile.user else 'No User'
     get_username.short_description = 'Username'  # Column header
 
-    search_fields = ('profile__user__username', 'level')
+    search_fields = ('profile__user__username',)  # add a comma to make it a tuple
     
 admin.site.register(Student, StudentAdmin)
 
@@ -55,3 +54,9 @@ class PDFAdmin(admin.ModelAdmin):
 
 admin.site.register(PDF, PDFAdmin)
 
+class ScoreAdmin(admin.ModelAdmin):
+    list_display = ('course', 'date', 'value')
+    
+    search_fields = ('course', 'date', 'value')
+    
+admin.site.register(Score, ScoreAdmin)

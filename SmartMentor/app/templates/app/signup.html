@@ -49,14 +49,6 @@
                     <option value="student">Student</option>
                 </select>
             </div>
-            <div class="form-dec hidden" id="level-selection">
-                <label for="level">Level of programming skills</label>
-                <select name="level" id="level">
-                    <option value="beginner">Beginner</option>
-                    <option value="intermediate">Intermediate</option>
-                    <option value="advanced">Advanced</option>
-                </select>
-            </div>
             <button type="submit">Sign Up</button>
             <div class="additional-links">
                 <a href="/">Home</a>
@@ -66,15 +58,6 @@
 </div>
 
 <script>
-    function toggleLevelSelection(role) {
-        const levelSelection = document.getElementById('level-selection');
-        if (role === 'student') {
-            levelSelection.removeAttribute('hidden');
-        } else {
-            levelSelection.setAttribute('hidden', '');
-        }
-    }
-
     document.addEventListener('DOMContentLoaded', function() {
         const roleElement = document.getElementById('role');
         toggleLevelSelection(roleElement.value);

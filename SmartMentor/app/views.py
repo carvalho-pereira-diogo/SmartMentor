@@ -53,8 +53,6 @@ def signup(request):
         pass1 = request.POST['pass1']
         pass2 = request.POST['pass2']
         role = request.POST['role']  # Either 'Student' or 'Teacher'
-        level = request.POST.get('level', None)  # Only for students, with a default of None
-
         # Basic validations
         if User.objects.filter(username=username).exists():
             messages.error(request, "Username already exists. Please try another username.")
@@ -83,7 +81,7 @@ def signup(request):
                 profile.save()
 
                 if role.lower() == 'student':
-                    student = Student(user=user, profile=profile, level=level)
+                    student = Student(user=user, profile=profile)
                     student.save()
                 elif role.lower() == 'teacher':
                     teacher = Teacher(user=user, profile=profile)
@@ -1076,6 +1074,7 @@ def course_view(request, course_id):
         return JsonResponse({'message': message, 'response': response, 'current_chunk': current_chunk})
 
     return render(request, 'app/chat_with_course.html', {'course': course})
+
 import random
 import json
 from django.shortcuts import render, get_object_or_404
@@ -1148,10 +1147,9 @@ def exam_view(request, course_id):
         print(f"Questions: {questions}")
         response = json.loads(questions)
         questions = response['questions']
+        
     except Exception as e:
         return JsonResponse({"error": "Failed to generate questions: " + str(e)}, status=500)
-    
-    
     
     if request.method == 'POST':
         score = 0
@@ -1160,9 +1158,73 @@ def exam_view(request, course_id):
             correct_option = next((o for o in question['options'] if o['is_correct']), None)
             if correct_option and correct_option['letter'] == answer:
                 score += 1
-        return JsonResponse({"score": score, "total": len(questions)})
-
+                
+        Score.objects.create(user=request.user, course=course, value=score)
+        #Instead of doing JsonResponse, you can render a template with the score
+        #render to exam_scores.html
+        
+        #return new exam
+        selected_chunk = random.choice(chunks)
+        system_prompt = {
+        "role": "system", 
+        "content": prompt_text
+        }
+    
+        messages = [system_prompt]
+        # Assuming you've setup OpenAI API client
+        try:
+            chat_completion = clientTutor.chat.completions.create(
+                model="gpt-4-turbo-preview",
+                messages=messages,
+                max_tokens=2500,
+                response_format={ "type": "json_object" }
+            )
+            
+            
+            questions = chat_completion.choices[0].message.content
+            print(f"Questions: {questions}")
+            response = json.loads(questions)
+            questions = response['questions']
+        except Exception as e:
+            return JsonResponse({"error": "Failed to generate questions: " + str(e)}, status=500)
+    
+        return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
+        
     return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
 
+from django.shortcuts import render
 
+def display_scores(request, course_id):
+    # Fetch the current course based on the course_id
+    course = Course.objects.get(id=course_id)
+
+    # Fetch the scores for the current user and course
+    scores = Score.objects.filter(user=request.user, course=course)
     
+    #evaluate student level base on the scores of the courses
+    # if score is between 0 and 74, student is a beginner
+    # if score is between 75 and 89, student is intermediate
+    # if score is between 90 and 100, student is advanced
+    
+    for score in scores:
+        #Create an average
+        score_values = [score.value for score in scores]
+        print(f"Score values: {score_values}")
+        average = sum(score_values) / len(score_values) if score_values else 0
+        print(f"Average: {average}")
+        average *= 10
+        print(f"Average: {average}")
+        level = ''
+        if 0 <= average <= 74:
+            level = 'Beginner'
+        elif 75 <= average <= 89:
+            level = 'Intermediate'
+        elif 90 <= average <= 100:
+            level = 'Advanced'
+            
+        print(level)
+            
+        
+
+    # Render the scores page
+    return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level})

@@ -1,26 +1,35 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Exam Page</title>
-</head>
-<body>
-    <h1>Exam for {{ course.name }}</h1>
+{% extends "app/base.html" %}
+
+{% block title %}
+Exam Page
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Exam for {{ course.name }}</h1>
     <form method="post" action="">
         {% csrf_token %}
         {% for question in questions %}
-            <div>
-                <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
+            <div class="mb-3">
+                <p class="fs-5"><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
                 {% for option in question.options %}
-                    <label>
-                        <input type="radio" name="question_{{ forloop.parentloop.counter }}" value="{{ option.letter }}">
-                        {{ option.letter }}: {{ option.text }}
-                    </label><br>
+                    <div class="form-check">
+                        <input class="form-check-input" type="radio" name="question_{{ forloop.parentloop.counter }}" value="{{ option.letter }}">
+                        <label class="form-check-label">
+                            {{ option.letter }}: {{ option.text }}
+                        </label>
+                    </div>
                 {% endfor %}
             </div>
         {% endfor %}
-        <br>
-        <button type="submit">Submit Answers</button>
+        <button type="submit" class="btn btn-warning">Submit Answers</button>
     </form>
-</body>
-</html>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+
+{% endblock %}

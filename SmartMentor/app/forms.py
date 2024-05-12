@@ -91,3 +91,8 @@ class PDFUploadForm(forms.ModelForm):
     class Meta:
         model = PDF
         fields = ['file']
+        
+class ScoreForm(forms.ModelForm):
+    class Meta:
+        model = QuizScore
+        fields = '__all__'

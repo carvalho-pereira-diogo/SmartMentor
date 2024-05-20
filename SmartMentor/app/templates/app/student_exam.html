@@ -5,6 +5,12 @@ Exams
 {% endblock %}
 
 {% block content %}
+<style>
+    .exam-image {
+        max-width: 270px; /* Adjust the max-width as needed */
+        max-height: 270px; /* Adjust the max-height as needed */
+    }
+</style>
     {% if user.is_authenticated %}
         {% if user.profile.role == 'student' %}
             <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -75,7 +81,7 @@ Exams
                             <p>Here are the exams you have participated in:</p>
                             {% for course in user.profile.student.courses.all %}
                                 <!-- redirect to exam_scores -->
-                                <a href="{% url 'exam_scores' course.id %}" target="_blank" class="btn btn-warning">Solutions for {{ course.name }}</a>
+                                <a href="{% url 'exam_scores' course.id %}" class="btn btn-warning">Solutions for {{ course.name }}</a>
                             {% endfor %}
                         </section>
                     </div>
@@ -86,19 +92,21 @@ Exams
                 </section>
             </div>
 
+            
             <br>
 
-            
-            
-      
-            
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
-              <br>
+            <div class="container-xl">
+            <section>
+                <div class="d-flex justify-content-center">
+                    {% load static %}
+                    <img src="{% static 'images/exam_image.jpg' %}" alt="Exam Image" class="img-fluid exam-image">
+                </div>
+            </section>
+            </div>
+
+            <br>
+            <br>
+            <br>
 
         {% else %}
             <h1>Access Denied</h1>

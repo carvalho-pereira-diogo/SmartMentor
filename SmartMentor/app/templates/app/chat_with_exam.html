@@ -4,6 +4,31 @@
 Exam Page
 {% endblock %}
 
+{% block styles %}
+<style>
+    .form-check {
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+    .form-check-label {
+        display: flex;
+        align-items: center;
+        margin-bottom: 0;
+    }
+    .form-check-input {
+        margin-left: 0.25rem; /* Small margin to keep the radio button close to the label */
+    }
+    .mb-3 {
+        margin-left: 1rem; /* Ensure the entire question block is not too far right */
+    }
+    .container {
+        max-width: 800px; /* Limit the width of the container for better alignment */
+        margin: auto; /* Center the container on the page */
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container">
     <h1 class="my-4">Exam for {{ course.name }}</h1>
@@ -14,9 +39,9 @@ Exam Page
                 <p class="fs-5"><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
                 {% for option in question.options %}
                     <div class="form-check">
-                        <input class="form-check-input" type="radio" name="question_{{ forloop.parentloop.counter }}" value="{{ option.letter }}">
                         <label class="form-check-label">
                             {{ option.letter }}: {{ option.text }}
+                            <input class="form-check-input" type="radio" name="question_{{ forloop.parentloop.counter }}" value="{{ option.letter }}">
                         </label>
                     </div>
                 {% endfor %}
@@ -26,6 +51,7 @@ Exam Page
     </form>
 </div>
 
+<br>
 <br>
 <br>
 <br>

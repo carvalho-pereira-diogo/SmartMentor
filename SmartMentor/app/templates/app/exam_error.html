@@ -1,0 +1,15 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Error
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">Error</h1>
+    <div class="alert alert-danger" role="alert">
+        {{ error_message }}
+    </div>
+    <a href="{% url 'chat_with_exam' course.id %}" class="btn btn-warning">Retry</a>
+</div>
+{% endblock %}

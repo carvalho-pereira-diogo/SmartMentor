@@ -254,7 +254,7 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
                     course.pdfs.add(pdf)
 
                 # Create a quiz for the course
-                quiz = Quiz(course=course, name="Quiz for " + course.name, teacher=request.user.teacher)
+                quiz = Quiz(course=course, name="Digital Quiz Agent for " + course.name, teacher=request.user.teacher)
                 quiz.save()
 
                 # Add the quiz to the teacher's quizzes list
@@ -1109,7 +1109,7 @@ def exam_view(request, course_id):
     selected_chunk = random.choice(chunks)
 
     prompt_text = f"""
-    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries.
+    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries. Simple questions should be provided.
 
     Text: "{selected_chunk}"
 
@@ -1149,7 +1149,7 @@ def exam_view(request, course_id):
         questions = response['questions']
         
     except Exception as e:
-        return JsonResponse({"error": "Failed to generate questions: " + str(e)}, status=500)
+        return render(request, 'app/exam_error.html', {'error_message': "Failed to generate questions: " + str(e), 'course': course})
     
     if request.method == 'POST':
         score = 0
@@ -1186,7 +1186,7 @@ def exam_view(request, course_id):
             response = json.loads(questions)
             questions = response['questions']
         except Exception as e:
-            return JsonResponse({"error": "Failed to generate questions: " + str(e)}, status=500)
+            return render(request, 'app/exam_error.html', {'error_message': "Failed to generate questions: " + str(e), 'course': course})
     
         return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
         

@@ -5,6 +5,12 @@ Student Quiz
 {% endblock %}
 
 {% block content %}
+<style>
+  .quiz-image {
+      max-width: 270px; /* Adjust the max-width as needed */
+      max-height: 270px; /* Adjust the max-height as needed */
+  }
+</style>
   {% if user.is_authenticated %}
     {% if user.profile.role == 'student' %}
     <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -102,13 +108,21 @@ Student Quiz
     </div>
 {% endif %}
   
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
-    <br>
+
+<br>
+
+<div class="container-xl">
+  <section>
+      <div class="d-flex justify-content-center">
+          {% load static %}
+          <img src="{% static 'images/quiz_image.jpg' %}" alt="Quiz Image" class="img-fluid quiz-image">
+      </div>
+  </section>
+</div>
+
+<br>
+<br>
+<br>
   
 
 {% else %}

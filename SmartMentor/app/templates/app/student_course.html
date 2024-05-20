@@ -4,7 +4,15 @@
 Courses
 {% endblock %}
 
+
+
 {% block content %}
+<style>
+    .course-image {
+        max-width: 270px; /* Adjust the max-width as needed */
+        max-height: 270px; /* Adjust the max-height as needed */
+    }
+</style>
     {% if user.is_authenticated %}
         {% if user.profile.role == 'student' %}
             <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -106,15 +114,21 @@ Courses
                     </table>
                 </section>
             </div>
-      
+
+                <!--Image-->
+                <div class="container-xl">
+                    <section>
+                        <div class="d-flex justify-content-center">
+                            {% load static %}
+                            <img src="{% static 'images/course_image.jpg' %}" alt="Course Image" class="img-fluid course-image">
+                        </div>
+                    </section>
+                </div>
             
               <br>
               <br>
               <br>
-              <br>
-              <br>
-              <br>
-              <br>
+              
 
         {% else %}
             <h1>Access Denied</h1>

@@ -4,11 +4,31 @@
 <style>
     body, html {
       height: 100%;
+      margin: 0;
+      display: flex;
+      overflow: hidden; /* Prevents the entire page from scrolling */
+    }
+
+    .chat-container {
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      width: 70%; /* Adjust width as needed */
+      border-right: 2px solid #ddd; /* Add a border for separation */
+      overflow-y: auto; /* Allows chat container to scroll */
+    }
+
+    .card {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
     }
 
     .messages-box {
       flex: 1;
       overflow-y: auto;
+      padding: 15px;
+      background-color: #f0f0f0; /* Light background for messages area */
     }
 
     .messages-list {
@@ -23,90 +43,101 @@
     .message-text {
       padding: 10px;
       border-radius: 5px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1); /* Add a shadow for depth */
     }
 
     .sent {
-      background-color: #00FFFF;
+      background-color: #d1e7dd; /* Light green for sent messages */
       align-self: flex-end;
+      color: #0f5132; /* Dark green text */
     }
 
     .received {
-      background-color: #f1f0f0;
+      background-color: #f8d7da; /* Light red for received messages */
       align-self: flex-start;
+      color: #842029; /* Dark red text */
     }
 
     .message-form {
       display: flex;
-      position: fixed;
-      bottom: 0;
-      left: 0;
-      right: 0;
       padding: 10px;
-      background-color: #f8f9fa;
+      background-color: #fff;
+      border-top: 1px solid #ddd;
     }
 
     .message-input {
       flex: 1;
-      border-radius: 0;
-      border-right: none;
+      border-radius: 5px 0 0 5px;
+      border: 1px solid #ddd;
+      padding: 10px;
     }
 
     .btn-send {
-      border-radius: 0;
+      border-radius: 0 5px 5px 0;
+      border: 1px solid #ddd;
+      background-color: #0d6efd; /* Primary button color */
+      color: white;
     }
 
-    .chat-container {
-      height: 100%;
+    .image-container {
+      width: 30%;
+      padding: 10px;
       display: flex;
-      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background-color: #e9ecef; /* Light grey background for image container */
+      position: fixed;
+      right: 0;
+      top: 0;
+      bottom: 0;
     }
 
-    .close-tab {
-        cursor: pointer;
-        font-size: 16px;
-        color: #fff;  /* Ensuring visibility against the header's background */
-        position: right;
-      }
+    .image-container img {
+      max-width: 100%;
+      max-height: 100%;
+      border-radius: 10px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1); /* Add shadow for depth */
+    }
 
+    .card-header {
+      background-color: #0d6efd; /* Primary header color */
+      color: white;
+    }
 
   </style>
 {% endblock %}
 
 
 {% block content %}
+<div class="image-container">
+    {% load static %}
+    <img src="{% static 'images/quiz_image_chat.jpg' %}" alt="Quiz Image">
+</div>
 <div class="chat-container">
   <div class="card flex-grow-1">
-    <div class="card-header bg-primary text-white">
+    <div class="card-header text-white">
       <div class="row">
         <div class="col-md-6">{{ quiz.name }}</div>
         <div class="col-md-6 text-right">Welcome, {{ user.profile.username }}</div>
       </div>
     </div>
-    
-
     <div class="card-body messages-box">
-      
       <ul class="list-unstyled messages-list">
-        
         <li class="message received">
           <div class="message-text">
             <div class="message-sender">
               <b>{{ quiz.name }}</b>
             </div>
             <div class="message-content">
-              Hi, I am {{ quiz.name }}, enter "question" to get a question. With "a,b,c,d" you can answer the questions.
+              Hello! I am {{ quiz.name }}, your digital quiz maker for the {{ quiz.course.name }}. I'm here to help you reinforce your learning. To receive a question, simply type "question." You can answer the questions by typing "a," "b," "c," or "d." Let's make your learning journey interactive and fun!
             </div>
           </div>
         </li>
       </ul>
-      
     </div>
-    <br><br>
-    <br><br>
-    <br><br>
   </div>
   <form class="message-form">
-    {%csrf_token%}
+    {% csrf_token %}
     <div class="input-group">
       <input type="text" class="form-control message-input" placeholder="Type your message...">
       <div class="input-group-append">
@@ -121,7 +152,6 @@
     const messageForm = document.querySelector('.message-form');
     const messageInput = document.querySelector('.message-input');
 
-    <!--Event Listener-->
     messageForm.addEventListener('submit', (event) => {
         event.preventDefault();
 

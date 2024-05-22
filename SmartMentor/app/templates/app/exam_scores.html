@@ -44,6 +44,7 @@ Exam Solutions
             <br>
             <div class="container-xl">
                 <section>
+                    {% if level == 'Beginner' or level == 'Intermediate' or level == 'Advanced' %}
                     <h4>Scores for {{ course.name }}</h4>
                     <table class="table">
                         <thead>
@@ -61,15 +62,47 @@ Exam Solutions
                         {% endfor %}
                         </tbody>
                     </table>
-                    <br>
+                    {% endif %}
                     
-                    <h4>Student Level: {{ level }}</h4>
+                    <br>
+                    {% if level == 'Beginner' or level == 'Intermediate' or level == 'Advanced' %}
+                    <h5>Average Score of last 10 exams: {{ average }}/100</h5>
+                    <h5>Student Level: {{ level }}</h5>
+                    {% endif %}
+                    
+                        {% if level == 'Beginner' %}
+                            <p> 
+                            - You are at the beginner level. Keep practicing to improve your scores!
+                            <br>
+                            Keep in mind: "Practice makes perfect."
+                            </p>
+                        {% elif level == 'Intermediate' %}
+                            <p>
+                            - You are at the intermediate level. Keep practicing to reach the advanced level!
+                            <br>
+                            Keep in mind: "Success is the sum of small efforts repeated day in and day out."
+                            </p>
+                        {% elif level == 'Advanced' %}
+                            <p>
+                            - You are at the advanced level. Congratulations on your achievement!
+                            <br>
+                            Keep in mind: "Success is not the key to happiness. Happiness is the key to success. If you love what you are doing, you will be successful."
+                            </p>
+                        {% else %}
+                            <h5>- You have not taken any exams yet. Start taking exams to determine your student level! </h5>
+                        {% endif %}
+                    <br>    
                     <h5>How it is calculated:</h5>
-                    <p>Student level is calculated based on the average score of all exams taken by the student.</p>
-                    <p>Average: 0-74 = Beginner, 75-89 = Intermediate, 90-100 = Advanced</p>
+                    <p>The calculation of the student level is based on the average score of all exams taken by the student. First, we collect all the exam scores and store them in a list. If the list is not empty, we calculate the average by summing up all the scores and dividing by the number of scores. This average is then multiplied by 10 to scale it to a range of 0 to 100. Based on this scaled average, we determine the student level: a scaled average of 0 to 74 corresponds to a 'Beginner' level, 75 to 89 corresponds to an 'Intermediate' level, and 90 to 100 corresponds to an 'Advanced' level. If no exams have been taken, the average is set to 0 and the student level is left empty.</p>
 
                 </section>
             </div>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
+            <br>
         {% endif %}
     {% endif %}
 {% endblock %}

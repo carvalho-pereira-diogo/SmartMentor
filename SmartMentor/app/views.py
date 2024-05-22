@@ -912,7 +912,6 @@ def quiz_view(request, quiz_id):
 
     if not chunks:
         return JsonResponse({"error": "No text could be extracted from the PDF."}, status=404)
-
     
 
     if request.method == 'POST':
@@ -920,6 +919,8 @@ def quiz_view(request, quiz_id):
         
         #Take randomly 1/4 of the chunks
         random_chunks = random.sample(chunks, len(chunks)//4)
+        
+        response = ""
 
         if message == "question":
             prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file."
@@ -928,47 +929,67 @@ def quiz_view(request, quiz_id):
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
             #Prompt a correction where it check the answer a to the last question
-            prompt_text = f"Answer: a, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+            prompt_text = f"Answer: a, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
         
         elif message == "b":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
             #Prompt a correction where it check the answer a to the last question
-            prompt_text = f"Answer: b, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+            prompt_text = f"Answer: b, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
         
         elif message == "c":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
             #Prompt a correction where it check the answer a to the last question
-            prompt_text = f"Answer: c, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+            prompt_text = f"Answer: c, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
         
         elif message == "d":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
             #Prompt a correction where it check the answer a to the last question
-            prompt_text = f"Answer: d, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer."
+            prompt_text = f"Answer: d, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
         
         else :
             prompt_text = f"You should tell the student that he can only reply with 'question' or 'a', 'b', 'c', 'd', Do not provide information that is not about the topic in the , this means you should not provide information that is not in the text: {random_chunks[0]}. DO NOT EXPLAIN QUESTIONS THAT ARE NOT RELATED."
                        
+        if message == "a" or message == "b" or message == "c" or message == "d":
+            system_prompt = {
+                "role": "system", 
+                "content": prompt_text
+            }
             
-        system_prompt = {
-            "role": "system", 
-            "content": prompt_text
-        }
-        
-        user_prompt = {"role": "user", "content": message}
+            user_prompt = {"role": "user", "content": message}
 
-        chat_completion = clientCourse.chat.completions.create(
-            model="gpt-4",
-            messages=[system_prompt, user_prompt],
-            max_tokens=250,
-            top_p=0.9
-        )
+            chat_completion = clientCourse.chat.completions.create(
+                model="gpt-4",
+                messages=[system_prompt, user_prompt],
+                max_tokens=250,
+                top_p=0.9
+            )
+            
+            response = chat_completion.choices[0].message.content.strip()
+            add_response_to_memory_quiz(response, request.user.id)
         
-        response = chat_completion.choices[0].message.content.strip()
-        add_response_to_memory_quiz(response, request.user.id)
-        
+        if message == "question":
+            system_prompt = {
+                "role": "system", 
+                "content": prompt_text
+            }
+            
+            user_prompt = {"role": "user", "content": message}
+
+            chat_completion = clientQuiz.chat.completions.create(
+                model="gpt-4",
+                messages=[system_prompt, user_prompt],
+                max_tokens=250,
+                top_p=0.9
+            )
+            response = chat_completion.choices[0].message.content.strip()
+            # Add new lines before a), b), c), and d)
+            for option in ['a)', 'b)', 'c)', 'd)']:
+                response = response.replace(option, '<br>' + option)
+
+            add_response_to_memory_quiz(response, request.user.id)
         
         return JsonResponse({'message': message, 'response': response})
 
@@ -1109,7 +1130,7 @@ def exam_view(request, course_id):
     selected_chunk = random.choice(chunks)
 
     prompt_text = f"""
-    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries. Simple questions should be provided.
+    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries.
 
     Text: "{selected_chunk}"
 
@@ -1193,38 +1214,37 @@ def exam_view(request, course_id):
     return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
 
 from django.shortcuts import render
-
 def display_scores(request, course_id):
     # Fetch the current course based on the course_id
     course = Course.objects.get(id=course_id)
 
     # Fetch the scores for the current user and course
     scores = Score.objects.filter(user=request.user, course=course)
-    
-    #evaluate student level base on the scores of the courses
-    # if score is between 0 and 74, student is a beginner
-    # if score is between 75 and 89, student is intermediate
-    # if score is between 90 and 100, student is advanced
-    
-    for score in scores:
-        #Create an average
-        score_values = [score.value for score in scores]
+
+    # Check if the student has any scores
+    if not scores:
+        level = 'To be determined'
+        average = 'N/A'
+    else:
+        # Get the last 10 scores
+        last_scores = scores.order_by('-id')[:10]
+
+        # Create an average
+        score_values = [score.value for score in last_scores]
         print(f"Score values: {score_values}")
         average = sum(score_values) / len(score_values) if score_values else 0
         print(f"Average: {average}")
         average *= 10
         print(f"Average: {average}")
-        level = ''
+        average = round(average, 2)
+
+        # Determine the level based on the average
         if 0 <= average <= 74:
             level = 'Beginner'
         elif 75 <= average <= 89:
             level = 'Intermediate'
         elif 90 <= average <= 100:
             level = 'Advanced'
-            
-        print(level)
-            
-        
 
     # Render the scores page
-    return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level})
+    return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level, 'average': average})

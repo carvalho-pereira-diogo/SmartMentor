@@ -136,6 +136,9 @@
       </ul>
     </div>
   </div>
+  <div class="input-group-ap  pend" style="margin-left: 20px;">
+    <button id="questionBtn" class="btn btn-warning" >Question</button>
+  </div>
   <form class="message-form">
     {% csrf_token %}
     <div class="input-group">
@@ -151,6 +154,8 @@
     const messagesList = document.querySelector('.messages-list');
     const messageForm = document.querySelector('.message-form');
     const messageInput = document.querySelector('.message-input');
+
+    const questionBtn = document.getElementById('questionBtn');
 
     messageForm.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -203,6 +208,11 @@
             messagesList.appendChild(messageItem);
         });
     });
+
+  questionBtn.addEventListener('click', () => {
+      messageInput.value = 'question';
+      messageForm.dispatchEvent(new Event('submit'));
+  });
 
 </script>
 

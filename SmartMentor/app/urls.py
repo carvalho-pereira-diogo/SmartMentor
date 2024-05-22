@@ -18,6 +18,9 @@ urlpatterns = [
     path('student_dashboard/', views.stu_dashboard, name='student_dashboard'),
     path('teacher_dashboard/', views.te_dashboard, name='teacher_dashboard'),
     
+    path('student/profile', StudentProfileView.as_view(), name='student_profile'),
+    path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),
+    
     
     path('student/already_enrolled', AlreadyEnrolledView.as_view(), name='already_enrolled'),
     path('error', ErrorView.as_view(), name='error'),
@@ -34,8 +37,6 @@ urlpatterns = [
     path('student/exam/<int:course_id>/', views.exam_view, name='chat_with_exam'),
     path('student/exam/scores/<int:course_id>/', views.display_scores, name='exam_scores'),
     
-    
-    
     # Create course for teacher
     path('teacher/course/create/', TeacherCourseView.as_view(), name='course_create'),
     path('teacher/courses/delete/<int:course_id>/', views.delete_course, name='course_delete'),
@@ -45,8 +46,6 @@ urlpatterns = [
     path('teacher/pdfs/delete/<int:pdf_id>/', views.delete_pdf, name='delete_pdf'),
     path('teacher/pdfs/', TeacherPDFView.as_view(), name='teacher_pdfs'),
     
-    path('student/profile', StudentProfileView.as_view(), name='student_profile'),
-    path('teacher/profile', TeacherProfileView.as_view(), name='teacher_profile'),
     
     path('student/quiz', StudentQuizView.as_view(), name='student_quiz'),
     path('student/quiz/<int:quiz_id>/', views.quiz_view, name='chat_with_quiz'),

@@ -129,12 +129,17 @@
               <b>{{ course.name }}</b>
             </div>
             <div class="message-content">
-              Hello! I am your digital assistant for the {{ course.name }} course. I'm here to help you navigate through the material and answer any questions you might have. To begin the course, simply type "start." You can move through the different sections using "next" and "prev." If you ever find yourself confused or need further clarification, don't hesitate to ask a question. Let's make learning enjoyable and productive. Have fun!
+              Hello! I am your digital assistant for the {{ course.name }} course. I'm here to help you navigate through the material and answer any questions you might have. To begin the course, simply click the "Start" button. You can move through the different sections using the "Next" and "Prev" buttons. If you ever find yourself confused or need further clarification, don't hesitate to ask a question. Let's make learning enjoyable and productive. Have fun!
             </div>
           </div>
         </li>
       </ul>
     </div>
+  </div>
+  <div class="input-group-append" style="margin-left: 20px;">
+    <button id="startBtn" class="btn btn-warning" style="margin-right: 10px;">Start</button>
+    <button id="nextBtn" class="btn btn-warning" style="margin-right: 10px; display: none;">Next</button>
+    <button id="prevBtn" class="btn btn-warning" style="display: none;">Prev</button>
   </div>
   <form class="message-form">
     {% csrf_token %}
@@ -151,6 +156,10 @@
     const messagesList = document.querySelector('.messages-list');
     const messageForm = document.querySelector('.message-form');
     const messageInput = document.querySelector('.message-input');
+
+    const startBtn = document.getElementById('startBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevBtn = document.getElementById('prevBtn');
 
     messageForm.addEventListener('submit', (event) => {
         event.preventDefault();
@@ -203,6 +212,25 @@
             messagesList.appendChild(messageItem);
         });
     });
+
+
+    startBtn.addEventListener('click', () => {
+      messageInput.value = 'start';
+      messageForm.dispatchEvent(new Event('submit'))
+      document.getElementById('nextBtn').style.display = 'inline-block';
+      document.getElementById('prevBtn').style.display = 'inline-block';
+      document.getElementById('startBtn').style.display = 'none';  // Hide the "Start" button
+  });
+
+  nextBtn.addEventListener('click', () => {
+      messageInput.value = 'next';
+      messageForm.dispatchEvent(new Event('submit'));
+  });
+
+  prevBtn.addEventListener('click', () => {
+      messageInput.value = 'prev';
+      messageForm.dispatchEvent(new Event('submit'));
+  });
 
 </script>
 

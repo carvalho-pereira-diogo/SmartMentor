@@ -1106,11 +1106,67 @@ from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 import openai
 
-# Ensure your OpenAI client is initialized correctly
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
+from PyPDF2 import PdfReader
+from django.conf import settings
+from app.models import Course, Question, Option, Score
+import openai
+import json
+import random
+
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
+from PyPDF2 import PdfReader
+from django.conf import settings
+from app.models import Course, Question, Option, Score
+import openai
+import json
+import random
+
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
+from PyPDF2 import PdfReader
+from django.conf import settings
+from app.models import Course, Question, Option, Score
+import openai
+import json
+import random
+
+from django.shortcuts import get_object_or_404, render, redirect
+from django.http import JsonResponse
+from PyPDF2 import PdfReader
+from django.conf import settings
+from app.models import Course, Question, Option, Score
+import openai
+import json
+import random
+
 clientTutor = openai.OpenAI(api_key=settings.OPENAI_API_KEY_TUTOR)
 
 def exam_view(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
+
+    if request.method == 'POST':
+        questions = request.session.get(f'questions_{course_id}_{request.user.id}', [])
+        score = 0
+        user_answers = {}
+        for i, question in enumerate(questions, start=1):
+            answer = request.POST.get(f'question_{i}')
+            if answer:
+                user_answers[str(question['session_id'])] = answer
+                correct_option = next((o for o in question['options'] if o['is_correct']), None)
+                if correct_option and correct_option['letter'] == answer:
+                    score += 1
+
+        print(f"User Answers: {user_answers}")
+        score_record = Score.objects.create(user=request.user, course=course, value=score, answers=user_answers)
+        
+        # Save questions with a unique session key using the score ID
+        request.session[f'questions_{score_record.id}'] = questions
+
+        return redirect('exam_results', score_id=score_record.id)
+
     pdf_files = course.pdfs.all()
 
     if not pdf_files:
@@ -1147,14 +1203,13 @@ def exam_view(request, course_id):
     
     RETURN JSON RESPONSE WITH THE QUESTIONS
     """
-    
+
     system_prompt = {
-        "role": "system", 
+        "role": "system",
         "content": prompt_text
     }
-    
+
     messages = [system_prompt]
-    # Assuming you've setup OpenAI API client
     try:
         chat_completion = clientTutor.chat.completions.create(
             model="gpt-4-turbo-preview",
@@ -1162,56 +1217,65 @@ def exam_view(request, course_id):
             max_tokens=2500,
             response_format={ "type": "json_object" }
         )
-          
-        
+
         questions = chat_completion.choices[0].message.content
-        print(f"Questions: {questions}")
-        response = json.loads(questions)
-        questions = response['questions']
-        
+        questions = json.loads(questions)['questions']
+
+        session_questions = []
+        for idx, question in enumerate(questions):
+            question['session_id'] = idx + 1  # Assign session_id for session storage
+            session_questions.append(question)
+
+        request.session[f'questions_{course_id}_{request.user.id}'] = session_questions
+
+        for question_data in session_questions:
+            correct_option = next(option for option in question_data['options'] if option['is_correct'])
+            question = Question.objects.create(
+                course=course,
+                text=question_data['text'],
+                correct_option=correct_option['letter']
+            )
+            for option_data in question_data['options']:
+                Option.objects.create(
+                    question=question,
+                    letter=option_data['letter'],
+                    text=option_data['text'],
+                    is_correct=option_data['is_correct']
+                )
+            question_data['id'] = question.id
+
+        request.session[f'questions_{course_id}_{request.user.id}'] = session_questions
+
     except Exception as e:
         return render(request, 'app/exam_error.html', {'error_message': "Failed to generate questions: " + str(e), 'course': course})
-    
-    if request.method == 'POST':
-        score = 0
-        for i, question in enumerate(questions, start=1):
-            answer = request.POST.get(f'question_{i}')
-            correct_option = next((o for o in question['options'] if o['is_correct']), None)
-            if correct_option and correct_option['letter'] == answer:
-                score += 1
-                
-        Score.objects.create(user=request.user, course=course, value=score)
-        #Instead of doing JsonResponse, you can render a template with the score
-        #render to exam_scores.html
-        
-        #return new exam
-        selected_chunk = random.choice(chunks)
-        system_prompt = {
-        "role": "system", 
-        "content": prompt_text
-        }
-    
-        messages = [system_prompt]
-        # Assuming you've setup OpenAI API client
-        try:
-            chat_completion = clientTutor.chat.completions.create(
-                model="gpt-4-turbo-preview",
-                messages=messages,
-                max_tokens=2500,
-                response_format={ "type": "json_object" }
-            )
-            
-            
-            questions = chat_completion.choices[0].message.content
-            print(f"Questions: {questions}")
-            response = json.loads(questions)
-            questions = response['questions']
-        except Exception as e:
-            return render(request, 'app/exam_error.html', {'error_message': "Failed to generate questions: " + str(e), 'course': course})
-    
-        return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
-        
+
     return render(request, 'app/chat_with_exam.html', {'course': course, 'questions': questions})
+
+def exam_results(request, score_id):
+    score = get_object_or_404(Score, pk=score_id)
+    course = score.course
+
+    # Retrieve questions using the unique session key with the score ID
+    session_questions = request.session.get(f'questions_{score_id}', [])
+
+    # Ensure questions are fetched correctly and do not mix with other exams
+    questions = []
+    for q in session_questions:
+        question = Question.objects.get(id=q['id'])
+        question.session_id = q['session_id']
+        questions.append(question)
+
+    options = Option.objects.filter(question__in=questions)
+
+    context = {
+        'course': course,
+        'score': score,
+        'questions': questions,
+        'user_answers': score.answers,
+        'options': options
+    }
+    return render(request, 'app/exam_results.html', context)
+
 
 from django.shortcuts import render
 def display_scores(request, course_id):

@@ -1,0 +1,37 @@
+{% extends "app/base.html" %}
+
+{% block title %}
+Exam Results
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <h1 class="my-4">{{ course.name }} Exam Results</h1>
+    <p>Score: {{ score.value }}</p>
+    <ul>
+        {% load exam_filters %}
+        {% for question in questions %}
+        <li>
+            <p><strong>{{ forloop.counter }}. {{ question.text }}</strong></p>
+            {% with user_answer=user_answers|get_key:question.session_id|stringformat:"s" %}
+                <p>
+                    Correct answer: <span style="color: green;">{{ question.correct_option }} - {% get_option_text question.id question.correct_option options %}</span>
+                </p>
+                {% if user_answer and user_answer != question.correct_option %}
+                    <p>
+                        Your answer: <span style="color: red;">{{ user_answer }} - {% get_option_text question.id user_answer options %}</span>
+                    </p>
+                {% endif %}
+            {% endwith %}
+        </li>
+        {% endfor %}
+    </ul>
+    <a href="{% url 'course_exam' %}" class="btn btn-warning">Go to exam section</a>
+</div>
+
+<br>
+<br>
+<br>
+<br>
+<br>
+{% endblock %}

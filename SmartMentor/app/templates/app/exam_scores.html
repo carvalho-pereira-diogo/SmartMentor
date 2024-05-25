@@ -5,6 +5,12 @@ Exam Solutions
 {% endblock %}
 
 {% block content %}
+<style>
+    .solution-image {
+        max-width: 270px; /* Adjust the max-width as needed */
+        max-height: 270px; /* Adjust the max-height as needed */
+    }
+</style>
     {% if user.is_authenticated %}
         {% if user.profile.role == 'student' %}
             <nav class="navbar navbar-expand-lg bg-body-tertiary">
@@ -51,6 +57,7 @@ Exam Solutions
                             <tr>
                                 <th>Date</th>
                                 <th>Score</th>
+                                <th>Solution</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -58,6 +65,7 @@ Exam Solutions
                         <tr>
                             <td>{{ score.date }}</td>
                             <td>{{ score.value }}</td>
+                            <td><a href="{% url 'exam_results' score.id%}" class="btn btn-warning">View Solution</a></td>
                         </tr>
                         {% endfor %}
                         </tbody>
@@ -98,8 +106,16 @@ Exam Solutions
                 </section>
             </div>
             <br>
-            <br>
-            <br>
+
+            <div class="container-xl">
+            <section>
+                <div class="d-flex justify-content-center">
+                    {% load static %}
+                    <img src="{% static 'images/solution_image.jpg' %}" alt="Solution Image" class="img-fluid solution-image">
+                </div>
+            </section>
+            </div>
+
             <br>
             <br>
             <br>

@@ -60,3 +60,7 @@ class ScoreAdmin(admin.ModelAdmin):
     search_fields = ('course', 'date', 'value')
     
 admin.site.register(Score, ScoreAdmin)
+
+# Register your models here.
+admin.site.register(Question)
+admin.site.register(Option)

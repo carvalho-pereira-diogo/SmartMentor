@@ -21,7 +21,20 @@ class Score(models.Model):
     course = models.ForeignKey('Course', on_delete=models.CASCADE)
     date = models.DateField(auto_now_add=True)
     value = models.IntegerField()
-    level = models.CharField(max_length=20, default='beginner')
+    level = models.CharField(max_length=20, default='To be determined')
+    answers = models.JSONField(default=dict)
+    
+class Question(models.Model):
+    course = models.ForeignKey('Course', on_delete=models.CASCADE)
+    text = models.TextField()
+    correct_option = models.CharField(max_length=1)
+    session_id = models.IntegerField(null=True, blank=True)
+
+class Option(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    letter = models.CharField(max_length=1)
+    text = models.CharField(max_length=255)
+    is_correct = models.BooleanField(default=False)
     
 class Student(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE, default=1)

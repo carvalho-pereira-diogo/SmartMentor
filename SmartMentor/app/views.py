@@ -471,11 +471,13 @@ class StudentQuizView(LoginRequiredMixin, ListView):
     # Post the quiz
     def post(self, request, *args, **kwargs):
         selected_quiz_id = request.POST.get('quiz')
+        print(f"Selected quiz ID: {selected_quiz_id}")  # Debug print
         if selected_quiz_id:
             quiz = get_object_or_404(Quiz, id=selected_quiz_id)
             student_profile = request.user.profile.student
             if quiz not in student_profile.quizzes.all():
                 student_profile.quizzes.add(quiz)  # Add the quiz to the student's list of enrolled quizzes
+                print(f"Enrolled quizzes after enrollment: {student_profile.quizzes.all()}")  # Debug print
                 return HttpResponseRedirect('.')  # Redirect to the current URL
             else:
                 return HttpResponseRedirect('/already_enrolled')  # Handle already enrolled scenario

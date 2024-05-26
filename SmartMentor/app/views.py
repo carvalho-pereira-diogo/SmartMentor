@@ -884,7 +884,7 @@ def quiz_view(request, quiz_id):
 
     return render(request, 'app/chat_with_quiz.html', {'quiz': quiz})
 
-
+#-Course section
 
 # Initialize the OpenAI client for Course
 clientCourse = OpenAI(api_key=settings.OPENAI_API_KEY_COURSE)

@@ -167,48 +167,6 @@ class TeacherProfileView(LoginRequiredMixin, DetailView):
         else:
             return redirect('teacher_profile')
         
-# return the teacher quiz page (Must be deleted)!!!!
-class TeacherQuizView(LoginRequiredMixin, ListView):
-    model = Quiz
-    template_name = 'app/teacher_quiz.html'
-    form_class = SimpleQuizForm  # Assume this is a simplified form
-    success_url = reverse_lazy('teacher_quiz')
-
-    # Get the quizzes associated with the teacher, else return none
-    def get_queryset(self):
-        if hasattr(self.request.user, 'teacher'):
-            return Quiz.objects.filter(teacher=self.request.user.teacher)
-        else:
-            return Quiz.objects.none()
-
-    # Get the context data of the teacher
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        context['quiz_form'] = self.form_class()  # No need to pass user here if the form is simplified
-        context['courses'] = Course.objects.filter(teacher=self.request.user.teacher)  # List courses for other UI elements maybe
-        return context
-
-    def post(self, request, *args, **kwargs):
-        form = self.form_class(request.POST, request.FILES, user=request.user)
-        if form.is_valid():
-            quiz = form.save(commit=False)
-            quiz.teacher = request.user.teacher
-            quiz.course = form.cleaned_data['course']  # Assuming 'course' is a field in your form
-            quiz.save()
-
-            # Associate the same PDFs as in the course to the quiz
-            quiz.pdfs.set(quiz.course.pdfs.all())
-            # add quiz to teacher's quiz list
-            request.user.teacher.quiz_list.add(quiz)
-            quiz.save()
-
-            # Add the quiz to the course's quiz set
-            quiz.course.quiz_set.add(quiz)  # Change to quizzes if related_name='quizzes' is used
-
-            messages.success(request, "Quiz created successfully!")
-            return redirect(self.success_url)
-        else:
-            return render(request, self.template_name, {'form': form, 'object_list': self.get_queryset(), 'errors': form.errors})
 
 
 # return the teacher pdf upload page
@@ -253,16 +211,6 @@ def delete_pdf(request, pdf_id):
         pdf.delete()
         request.user.teacher.pdfs.remove(pdf)
     return redirect('teacher_pdfs')
-
-# Extract text from a PDF file
-def extract_text_from_pdf(pdf_path):
-    doc = fitz.open(pdf_path)
-    text = ''
-    for page in doc:
-        text += page.get_text()
-    doc.close()
-    print("Extracted Text:", text)  # Debug output
-    return text
 
 # Create courses and quizzes by extracting text from PDFs from the teacher
 class TeacherCourseView(LoginRequiredMixin, ListView):
@@ -361,6 +309,8 @@ def teacher_courses(request):
         courses = Course.objects.none()
     return render(request, 'te_courses.html', {'courses': courses})
 
+#- Student section
+
 # StudentProfileView
 class StudentProfileView(LoginRequiredMixin, DetailView):
     model = Student
@@ -372,32 +322,7 @@ class StudentProfileView(LoginRequiredMixin, DetailView):
             return self.request.user.student
         else:
             return redirect('student_profile')
-        
 
-@login_required
-def quiz(request, course_id):
-    course = get_object_or_404(Course, id=course_id)
-    student = request.user.profile.student  # Adjust this based on how your Student model is linked to User
-
-    if course in student.courses.all():
-        student.courses.remove(course)
-        messages.success(request, "You have successfully unenrolled from the course.")
-    else:
-        messages.error(request, "You are not enrolled in this course.")
-
-    return redirect('student_courses')  # Redirect to the page where courses are listed or another appropriate page.
-
-
-@login_required
-def unenroll_quiz(request, quiz_id):  # Add the quiz_id parameter here
-    # Assuming Student model has a 'quizzes' many-to-many field with Quiz
-    student_profile = request.user.profile.student
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-
-    if quiz in student_profile.quizzes.all():
-        student_profile.quizzes.remove(quiz)
-
-    return redirect('student_quiz')  # Redirect to an appropriate view after unenrollment
 
 # unenroll_course helps to unenroll the course from student
 @login_required
@@ -418,31 +343,6 @@ def unenroll_course(request, course_id):
             student_profile.quizzes.remove(quiz)
 
     return redirect('student_courses') 
-
-
-@login_required
-@require_POST
-def submit_quiz(request, quiz_id):
-    quiz = get_object_or_404(Quiz, id=quiz_id)
-    student = get_object_or_404(Student, profile__user=request.user)
-    score = int(request.POST.get('score'))  # Convert the score to an integer
-
-    # Save the quiz score
-    quiz_score = QuizScore(student=student, quiz=quiz, score=score)
-    quiz_score.save()
-
-    # Update the LearningPath based on the score
-    learning_path = get_object_or_404(LearningPath, student=student, course=quiz.course)
-    if 0 <= score <= 74:
-        learning_path.level = 'Beginner'
-    elif 75 <= score <= 89:
-        learning_path.level = 'Intermediate'
-    elif 90 <= score <= 100:
-        learning_path.level = 'Advanced'
-    learning_path.save()
-
-    return render(request, 'app/quiz_result.html', {'learning_path': learning_path})
-
 
 # StudentQuizView helps to list the student's quiz
 class StudentQuizView(LoginRequiredMixin, ListView):
@@ -570,23 +470,6 @@ class EnrollCourseView(LoginRequiredMixin, View):
                 return HttpResponseRedirect('/student/already_enrolled')
         return HttpResponseRedirect('/error')
 
-
-
-class EnrollQuizView(LoginRequiredMixin, View):
-    def post(self, request, *args, **kwargs): # Check authentication
-        quiz_id = request.POST.get('quiz_id')
-        
-        if not quiz_id:
-            return HttpResponseRedirect('/error')  # Log and redirect to error
-
-        quiz = get_object_or_404(Quiz, id=quiz_id)
-        student_profile = request.user.profile.student
-        if quiz in student_profile.quizzes.all():
-            return HttpResponseRedirect('/student/already_enrolled')
-
-        student_profile.quizzes.add(quiz)
-        return redirect('student_quiz')
-    
 # EnrollQuizView helps to enroll the quiz for the student
 class StudentLearningPathView(LoginRequiredMixin, ListView):
     model = Course
@@ -634,71 +517,6 @@ class StudentExamView(LoginRequiredMixin, ListView):
         context['enrolled_courses'] = enrolled_courses
         return context
 
-def generate_quiz_from_url(request, course_id):
-    course = get_object_or_404(Course, pk=course_id)
-    # Extract text from pdf under courses.pdfs
-    pdf_path = course.pdfs.first().file.path
-    text = extract_text_from_pdf(pdf_path)
-    questions = generate_questions_and_choices(text)
-    
-    if request.method == 'POST':
-        return grade_quiz(request, questions)
-    
-    return render(request, "chat_with_exam.html", {"questions": questions})
-
-def grade_quiz(request, questions):
-    score = 0
-    total = len(questions)
-
-    for question in questions:
-        user_answer = request.POST.get(str(question['id']))
-        if user_answer == question['correct_answer']:
-            score += 1
-
-    percentage = score / total * 100
-    update_student_role(request.user, percentage)  # Assuming the user is a student
-
-    return render(request, "quiz_results.html", {"score": score, "total": total, "percentage": percentage})
-
-def update_student_role(student, percentage):
-    if percentage <= 75:
-        role = 'beginner'
-    elif 76 <= percentage <= 90:
-        role = 'intermediate'
-    else:
-        role = 'advanced'
-
-    student.profile.role = role  # Assuming the student has a profile attribute with a role
-    student.profile.save()
-
-def generate_questions_and_choices(text):
-    # Split the text into lines
-    lines = text.split('\n')
-
-    # Initialize empty list to store questions
-    questions = []
-
-    # Iterate over the lines and extract questions and choices
-    current_question = None
-    for line in lines:
-        line = line.strip()
-        if line.endswith('?'):
-            # This is a question
-            current_question = {
-                'question': line,
-                'choices': []
-            }
-            questions.append(current_question)
-        elif current_question is not None and line:
-            # This is a choice
-            current_question['choices'].append(line)
-
-    # Shuffle the choices for each question
-    for question in questions:
-        random.shuffle(question['choices'])
-
-    return questions
-
 # get_student_info helps to get the student information
 def get_student_info(request):
     try:
@@ -716,55 +534,29 @@ def get_student_info(request):
     except Student.DoesNotExist:
         return None
 
-from openai import OpenAI
 
-# ClientQuiz helps to create a client for OpenAI
-clientQuiz = OpenAI(api_key=settings.OPENAI_API_KEY_QUIZ)
 
-def get_pdf_text_quiz(quiz_id):
-    try:
-        quiz = Quiz.objects.get(pk=quiz_id)
-        pdf_files = quiz.pdfs.all()  # Assuming pdfs is a related name for file fields
-        text_content = ""
-        for pdf_file in pdf_files:
-            reader = PdfReader(pdf_file.file.path)
-            for page in reader.pages:
-                text_content += page.extract_text() + "\n"
-        return text_content
-    except Exception as e:
-        print(f"Error reading PDFs: {str(e)}")
-        return ""
-    
-memoryQuiz = {}
+# -Quiz section
+
+# memoryResponses_quiz helps to store the responses of the quiz
 memoryResponses_quiz = {}
-
-def add_message_to_memory_quiz(message, user_id):
-    if user_id not in memoryQuiz:
-        memoryQuiz[user_id] = []
-    memoryQuiz[user_id].append(message)
     
-    
+# add_response_to_memory_quiz helps to add the response to the memory of the quiz
 def add_response_to_memory_quiz(response, user_id):
+    # Check if the user ID is not in the memory
     if user_id not in memoryResponses_quiz:
+        # Add the user ID to the memory
         memoryResponses_quiz[user_id] = []
+    # Add the response to the memory
     memoryResponses_quiz[user_id].append(response)
+    # Check if the memory has more than 3 responses
     if len(memoryResponses_quiz[user_id]) > 3:
+        # Remove the first response from the memory
         memoryResponses_quiz[user_id].pop(0)
         
-
-# Quiz view
-
-# memoryQuiz helps to store the messages
-memoryQuiz = {}
-
-# add_message_to_memory_quiz helps to add the message to the memory
-def add_message_to_memory_quiz(message, user_id):
-    # Check if the user_id is in the memoryQuiz
-    if user_id not in memoryQuiz:
-        # Add the user_id to the memoryQuiz
-        memoryQuiz[user_id] = []
-    # Add the message to the memoryQuiz
-    memoryQuiz[user_id].append(message)
+    
+# ClientQuiz helps to create a client for OpenAI
+clientQuiz = OpenAI(api_key=settings.OPENAI_API_KEY_QUIZ)
 
 # quiz_view helps to view the quiz
 def quiz_view(request, quiz_id):
@@ -806,27 +598,27 @@ def quiz_view(request, quiz_id):
 
         # Check if message is question, and prompt it
         if message == "question":
-            prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file."
+            prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file. Do not ask question about chapters, versions, sections and code snippets."
         # Check if message is a, b, c, or d, and prompt it
         elif message == "a":
             # Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
-            prompt_text = f"Answer: a, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
+            prompt_text = f"Answer: a, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect. Give always a small explanation."
         
         elif message == "b":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
-            prompt_text = f"Answer: b, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
+            prompt_text = f"Answer: b, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect. Give always a small explanation."
         
         elif message == "c":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
-            prompt_text = f"Answer: c, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
+            prompt_text = f"Answer: c, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect. Give always a small explanation."
         
         elif message == "d":
             #Check last response and correct it
             last_response = memoryResponses_quiz[request.user.id][-1]
-            prompt_text = f"Answer: d, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect."
+            prompt_text = f"Answer: d, for the question: {last_response}, correct it and provide with 'correct' or 'incorrect', if the question is wrong or correct, in case of being wrong provide the correct answer. Also explain why it is correct or incorrect. Give always a small explanation."
         
         else :
             # Check if the message is not a, b, c, d, or question and prompt it

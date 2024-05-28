@@ -747,7 +747,7 @@ def course_view(request, course_id):
             # Modify the session
             request.session.modified = True
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
         # Check if message is next, and prompt it
         elif message == "next":
             # Check if the current chunk index is less than the total chunks
@@ -759,7 +759,7 @@ def course_view(request, course_id):
             # Get the current chunk
             current_chunk = chunks[session_data['current_chunk_index']]
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
         # Check if message is prev, and prompt it
         elif message == "prev":
             # Check if the current chunk index is greater than 0
@@ -771,7 +771,7 @@ def course_view(request, course_id):
             # Get the current chunk
             current_chunk = chunks[session_data['current_chunk_index']]
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}"
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
             
         # Check if message is detail, and prompt it
         system_prompt = {
@@ -868,7 +868,7 @@ def exam_view(request, course_id):
 
     # Prompt the user to generate questions
     prompt_text = f"""
-    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries.
+    You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries. Do not ask question about chapters, versions, sections and code snippets.
 
     Text: "{selected_chunk}"
 
@@ -984,6 +984,8 @@ def display_scores(request, course_id):
 
     # Fetch the scores for the current user and course
     scores = Score.objects.filter(user=request.user, course=course)
+    
+    teacher_email = course.teacher.profile.email
 
     # Check if the student has any scores
     if not scores:
@@ -1008,4 +1010,4 @@ def display_scores(request, course_id):
             level = 'Advanced'
 
     # Render the scores page
-    return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level, 'average': average})
+    return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level, 'average': average, 'teacher_email': teacher_email})

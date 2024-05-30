@@ -5,134 +5,190 @@ Teacher Courses
 {% endblock %}
 
 {% block content %}
-    {% if user.is_authenticated %}
-        {% if user.profile.role == 'teacher' %}
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="/">SmartMentor</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFS</a>
-                            </li>
-                              <li class="nav-item">
-                                  <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
-                              </li>
-                            <li class="nav-item">
-                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+    .navbar-brand {
+        font-weight: bold;
+    }
+    .section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .section h4 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        margin-top: 10px;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .form-control {
+        width: 100%;
+        padding: 10px;
+        margin: 5px 0;
+        border-radius: 5px;
+        border: 1px solid #ddd;
+    }
+    .teacher_course-image {
+        max-width: 270px;
+        max-height: 270px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 20px auto;
+        display: block;
+    }
+</style>
+
+{% if user.is_authenticated %}
+    {% if user.profile.role == 'teacher' %}
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">SmartMentor</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            <br />
-            <div class="container-xl">
-                <section>
-                    <h4>Create a new course:</h4>
-                    <form action="{% url 'course_create' %}" method="post">
-                        {% csrf_token %}
-                        <label for="name">Course Name:</label><br>
-                        <input type="text" id="name" name="name"><br>
-                        <label for="description">Course Description:</label><br>
-                        <input type="text" id="description" name="description"><br>
-                        <label for="pdfs">Select PDFs:</label><br>
-                        <select id="pdfs" name="pdfs" multiple>
-                            {% for pdf in user.teacher.pdfs.all %}
-                                <option value="{{ pdf.id }}">{{ pdf.file.name }}</option>
+        <br />
+        <div class="container-xl">
+            <section class="section">
+                <h4>Create a new course:</h4>
+                <form action="{% url 'course_create' %}" method="post">
+                    {% csrf_token %}
+                    <label for="name">Course Name:</label>
+                    <input type="text" id="name" name="name" class="form-control">
+                    <label for="description">Course Description:</label>
+                    <input type="text" id="description" name="description" class="form-control">
+                    <label for="pdfs">Select PDFs:</label>
+                    <select id="pdfs" name="pdfs" class="form-control" multiple>
+                        {% for pdf in user.teacher.pdfs.all %}
+                            <option value="{{ pdf.id }}">{{ pdf.file.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="submit" class="btn btn-primary">Create Course</button>
+                </form>
+            </section>
+        </div>
+
+        <br />
+
+        <div class="container-xl">
+            <section class="section">
+                <h4>Course List:</h4>
+                {% if user.profile.teacher.courses_list.all %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Description</th>
+                                <th>PDFs</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for course in user.profile.teacher.courses_list.all %}
+                                <tr>
+                                    <td>{{ course.name }}</td>
+                                    <td>{{ course.description }}</td>
+                                    <td>
+                                        <ul>
+                                            {% for pdf in course.pdfs.all %}
+                                                <li><a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </td>
+                                    <td>
+                                        <form method="post" action="{% url 'course_delete' course.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    </td>
+                                </tr>
                             {% endfor %}
-                        </select><br><br>
-                        <input type="submit" value="Create Course">
-                    </form>
-                </section>
-            </div>
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No courses created, must upload PDFs to create a course!</p>
+                {% endif %}
+            </section>
+        </div>
 
-            <br />
-
-            <div class="container-xl">
-                <section>
-                    <h4>Course List:</h4>
-                    {% if user.profile.teacher.courses_list.all %}
-                        <table class="table">
-                            <thead>
+        <br />
+        
+        <div class="container-xl">
+            <section class="section">
+                <h4>Quiz List:</h4>
+                {% if user.profile.teacher.quizzes.all %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Name</th>
+                                <th>Course</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quiz in user.profile.teacher.quizzes.all %}
                                 <tr>
-                                    <th>Name</th>
-                                    <th>Description</th>
-                                    <th>PDFs</th>
-                                    <th>Action</th>
+                                    <td>{{ quiz.name }}</td>
+                                    <td>{{ quiz.course.name }}</td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for course in user.profile.teacher.courses_list.all %}
-                                    <tr>
-                                        <td>{{ course.name }}</td>
-                                        <td>{{ course.description }}</td>
-                                        <td>
-                                            <ul>
-                                                {% for pdf in course.pdfs.all %}
-                                                    <li><a href="{{ pdf.file.url }}">{{ pdf.file.name }}</a></li>
-                                                {% endfor %}
-                                            </ul>
-                                        </td>
-                                        <td>
-                                            <form method="post" action="{% url 'course_delete' course.id %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No courses created, must upload pdfs to create course!</p>
-                    {% endif %}
-                </section>
-            </div>
-            <br />
-            <div class="container-xl">
-                <section>
-                    <h4>Quiz List</h4>
-                    {% if user.profile.teacher.quizzes.all %}
-                        <table class="table">
-                            <thead>
-                                <tr>
-                                    <th>Name</th>
-                                    <th>Course</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for quiz in user.profile.teacher.quizzes.all %}
-                                    <tr>
-                                        <td>{{ quiz.name }}</td>
-                                        <td>{{ quiz.course.name }}</td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No quizzes created yet!</p>
-                    {% endif %}
-                </section>
-            </div>
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-            <br />
-        {% else %}
-            <h1>Access Denied</h1>
-            <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-        {% endif %}
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No quizzes created yet!</p>
+                {% endif %}
+            </section>
+        </div>
+        <br />
+        <div class="container-xl">
+            <section class="image-container">
+                {% load static %}
+                <img src="{% static 'images/teacher_course_image.jpg' %}" alt="Teacher Course Image" class="teacher_course-image">
+            </section>
+        </div>
+        <br /><br /><br />
+    {% else %}
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
     {% endif %}
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+{% endif %}
 {% endblock %}

@@ -1,60 +1,94 @@
 {% extends "app/base.html" %}
 
 {% block title %}
-Exams
+Student Exams
 {% endblock %}
 
 {% block content %}
 <style>
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+    .navbar-brand {
+        font-weight: bold;
+    }
+    .section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .section h4 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+    .table {
+        margin-top: 20px;
+    }
     .exam-image {
-        max-width: 270px; /* Adjust the max-width as needed */
-        max-height: 270px; /* Adjust the max-height as needed */
+        max-width: 270px;
+        max-height: 270px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 20px auto;
+        display: block;
     }
 </style>
-    {% if user.is_authenticated %}
-        {% if user.profile.role == 'student' %}
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="{% url 'home' %}">SmartMentor</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'student_profile' %}">Profile</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'student_courses' %}">Courses</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="/student/quiz">Quizzes</a>
-                              </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
-                            </li>
-                            <li class="nav-item">
-                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+
+{% if user.is_authenticated %}
+    {% if user.profile.role == 'student' %}
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="{% url 'home' %}">SmartMentor</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'student_profile' %}">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'student_courses' %}">Courses</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'course_learningpath' %}">Learning Path</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/student/quiz">Quizzes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
-            </nav>
+            </div>
+        </nav>
 
-            <br>
+        <br>
 
-            
-            <div class="container-xl">
-                <section>
-
-                    {% if enrolled_courses %}
-                    <h4>Participate in exams!</h4>
+        <div class="container-xl">
+            <section class="section">
+                {% if enrolled_courses %}
+                    <h4>Participate in Exams</h4>
+                    <p>Here are the exams for your enrolled courses:</p>
                     <table class="table table-striped">
                         <thead>
                             <tr>
@@ -75,46 +109,44 @@ Exams
                             {% endfor %}
                         </tbody>
                     </table>
+                    <br>
+
                     <div class="container-xl">
-                        <section>
-                            <h4>Check for solutions of exam!</h4>
+                        <section class="section">
+                            <h4>Check for Solutions</h4>
                             <p>Here are the exams you have participated in:</p>
                             {% for course in user.profile.student.courses.all %}
-                                <!-- redirect to exam_scores -->
-                                <a href="{% url 'exam_scores' course.id %}" class="btn btn-warning">Solutions for {{ course.name }}</a>
+                                <a href="{% url 'exam_scores' course.id %}" class="btn btn-warning mb-2">Solutions for {{ course.name }}</a>
                             {% endfor %}
                         </section>
                     </div>
-                    {% else %}
-                    <h4>Enroll in a course!</h4>
-                    <p>You are not enrolled in any course. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in an exam.</p>
-                    {% endif %}
-                </section>
-            </div>
+                {% else %}
+                    <h4>Enroll in a Course!</h4>
+                    <p>You are not enrolled in any courses. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in an exam.</p>
+                {% endif %}
+            </section>
+        </div>
 
-            
-            <br>
+        <br>
 
-            <div class="container-xl">
-            <section>
+        <div class="container-xl">
+            <section class="image-container">
                 <div class="d-flex justify-content-center">
                     {% load static %}
                     <img src="{% static 'images/exam_image.jpg' %}" alt="Exam Image" class="img-fluid exam-image">
                 </div>
             </section>
-            </div>
+        </div>
 
-            <br>
-            <br>
-            <br>
+        <br><br><br>
 
-        {% else %}
-            <h1>Access Denied</h1>
-            <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
-        {% endif %}
     {% else %}
         <h1>Access Denied</h1>
-        <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+        <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
     {% endif %}
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+{% endif %}
 
 {% endblock %}

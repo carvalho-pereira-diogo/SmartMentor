@@ -1,95 +1,149 @@
 {% extends "app/base.html" %}
+
 {% block title %}
 Student Profile
 {% endblock %}
 
 {% block content %}
+<style>
+  body {
+      font-family: 'Arial', sans-serif;
+  }
+  .profile-container {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 0;
+  }
+  .navbar-brand {
+    font-weight: bold;
+  }
+  .profile-text {
+      flex: 1;
+      padding-right: 40px;
+      border-right: 1px solid #ddd;
+  }
+  .profile-image {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding-left: 40px;
+  }
+  .student_profile-image {
+      max-width: 270px;
+      max-height: 270px;
+      border-radius: 50%;
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+  }
+  .section {
+      margin-bottom: 20px;
+      padding: 20px;
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+  }
+  .section h4 {
+      border-bottom: 2px solid #007bff;
+      padding-bottom: 5px;
+      margin-bottom: 15px;
+      color: #007bff;
+  }
+  .btn-warning {
+      background-color: #ffc107;
+      border-color: #ffc107;
+  }
+</style>
+
 {% if user.is_authenticated %}
-{% if user.profile.role == 'student' %}
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
-  <div class="container-fluid">
-    <a class="navbar-brand" href="/">SmartMentor</a>
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-        <li class="nav-item">
-          <a class="nav-link" href="/student/profile">Profile</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="/student/courses">Courses</a>
-        </li>
-        <li class="nav-item">
-          <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="/student/quiz">Quizzes</a>
-      </li>
-      <li class="nav-item">
-        <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
-    </li>
-        <li class="nav-item">
-          <form action="{% url 'logout' %}" method="post" style="margin: 0">
-            {% csrf_token %}
-            <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-        </li>
-    </div>
-  </div>
-</nav>
-
-          <br>
-
-        <div class="container-xl">
-          <section>
-              <h4>Student Profile:</h4>
-              <p>Username: {{ user.profile.username }}</p>
-              <p>Name: {{ user.profile.fname}} {{ user.profile.lname }}</p>
-          </section>
+  {% if user.profile.role == 'student' %}
+    <nav class="navbar navbar-expand-lg bg-body-tertiary">
+      <div class="container-fluid">
+        <a class="navbar-brand" href="/">SmartMentor</a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+          <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarSupportedContent">
+          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+              <li class="nav-item">
+                  <a class="nav-link" href="/student/profile">Profile</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="/student/courses">Courses</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'course_learningpath' %}">Learning Path</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="/student/quiz">Quizzes</a>
+              </li>
+              <li class="nav-item">
+                  <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+              </li>
+              <li class="nav-item">
+                  <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                      {% csrf_token %}
+                      <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                  </form>
+              </li>
+          </ul>
+        </div>
       </div>
-      <br>
-      <div class="container-xl">
-        <section>
-            <h4>Personal Information:</h4>
-            <p>First Name: {{ user.profile.fname }}</p>
-            <p>Last Name: {{ user.profile.lname }}</p>
-            <p>Email: {{ user.email }}</p>
-        
-        </section>
+    </nav>
+
+    <br>
+
+    <div class="container-xl">
+      <section class="profile-container section">
+          <div class="profile-text">
+              <h4>Student Profile:</h4>
+              <p><strong>Username:</strong> {{ user.profile.username }}</p>
+              <p><strong>Name:</strong> {{ user.profile.fname }} {{ user.profile.lname }}</p>
+          </div>
+          <div class="profile-image">
+            {% load static %}
+              <img src="{% static 'images/student_profile_image.jpg' %}" alt="Student Profile Image" class="student_profile-image">
+          </div>
+      </section>
     </div>
     <br>
     <div class="container-xl">
-      <section>
-          <h4>Change Password:</h4>
-          <form action="{% url 'password_change' %}">
-            <a href="{% url 'password_change' %}" class="btn btn-warning">Change</a>
-       </form>
+      <section class="section">
+          <h4>Personal Information:</h4>
+          <p><strong>First Name:</strong> {{ user.profile.fname }}</p>
+          <p><strong>Last Name:</strong> {{ user.profile.lname }}</p>
+          <p><strong>Email:</strong> {{ user.email }}</p>
       </section>
     </div>
-  <br>
+
+    <br>
     <div class="container-xl">
-      <section>
-          <h4>SmartMentor Statistics:</h4>
-          <p>Role: {{ user.profile.role }}</p>
-          <p>Created: {{ user.profile.date_created }}</p>
+      <section class="section">
+          <h4>Change Password:</h4>
+          <form action="{% url 'password_change' %}">
+              <a href="{% url 'password_change' %}" class="btn btn-warning">Change</a>
+          </form>
       </section>
-  </div>
+    </div>
+    <br>
+    <div class="container-xl">
+      <section class="section">
+          <h4>SmartMentor Statistics:</h4>
+          <p><strong>Role:</strong> {{ user.profile.role }}</p>
+          <p><strong>Created:</strong> {{ user.profile.date_created }}</p>
+      </section>
+    </div>
 
-  <br>
-  <br>
-  <br>
-  <br>
-  <br>
-  <br>
-  <br>
+    <br>
+    <br>
+    <br>
 
-    {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-  {% endif %}
   {% else %}
-      <h1>Access Denied</h1>
-      <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
   {% endif %}
+{% else %}
+  <h1>Access Denied</h1>
+  <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+{% endif %}
 
 {% endblock %}

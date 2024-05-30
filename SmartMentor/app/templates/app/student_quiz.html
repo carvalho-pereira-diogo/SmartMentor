@@ -6,132 +6,165 @@ Student Quiz
 
 {% block content %}
 <style>
-  .quiz-image {
-      max-width: 270px; /* Adjust the max-width as needed */
-      max-height: 270px; /* Adjust the max-height as needed */
-  }
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+    .navbar-brand {
+        font-weight: bold;
+    }
+    .section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .section h4 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .btn-warning {
+        background-color: #ffc107;
+        border-color: #ffc107;
+    }
+    .btn-warning:hover {
+        background-color: #e0a800;
+        border-color: #d39e00;
+    }
+    .table {
+        margin-top: 20px;
+    }
+    .quiz-image {
+        max-width: 270px;
+        max-height: 270px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 20px auto;
+        display: block;
+    }
 </style>
-  {% if user.is_authenticated %}
+
+{% if user.is_authenticated %}
     {% if user.profile.role == 'student' %}
-    <nav class="navbar navbar-expand-lg bg-body-tertiary">
-        <div class="container-fluid">
-          <a class="navbar-brand" href="/">SmartMentor</a>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-            <span class="navbar-toggler-icon"></span>
-          </button>
-          <div class="collapse navbar-collapse" id="navbarSupportedContent">
-            <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                <a class="nav-link" href="/student/profile">Profile</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="/student/courses">Courses</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'course_learningpath' %}">Learning path</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="/student/quiz">Quizzes</a>
-            </li>
-            <li class="nav-item">
-              <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
-          </li>
-              <li class="nav-item">
-                <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                  {% csrf_token %}
-                  <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-              </form>
-              
-              </li>
-          </div>
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">SmartMentor</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="/student/profile">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/student/courses">Courses</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'course_learningpath' %}">Learning Path</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="/student/quiz">Quizzes</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'course_exam' %}">Exams</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <br>
+
+        {% if enrolled_quizzes %}
+            <div class="container-xl">
+                <section class="section">
+                    <h4>Enrolled Quizzes</h4>
+                    <p>Here are the quizzes you have enrolled in:</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Quiz Name</th>
+                                <th>Course</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quiz in enrolled_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.name }}</td>
+                                    <td>{{ quiz.course.name }}</td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        {% else %}
+            <div class="container-xl">
+                <section class="section">
+                    <h4>Participate in a Course! (To Unlock Quizzes)</h4>
+                    <p>You are not enrolled in any quizzes. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in quizzes.</p>
+                </section>
+            </div>
+        {% endif %}
+
+        <br>
+
+        {% if enrolled_quizzes %}
+            <div class="container-xl">
+                <section class="section">
+                    <h4>Start Communication</h4>
+                    <p>Here are the links to participate in the different quizzes:</p>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Quiz Name</th>
+                                <th>Link</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for quiz in enrolled_quizzes %}
+                                <tr>
+                                    <td>{{ quiz.name }}</td>
+                                    <td>
+                                        <a href="{% url 'chat_with_quiz' quiz.id %}" target="_blank" class="btn btn-warning">Quiz</a>
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </section>
+            </div>
+        {% endif %}
+
+        <br>
+
+        <div class="container-xl">
+            <section>
+                <div class="d-flex justify-content-center">
+                    {% load static %}
+                    <img src="{% static 'images/quiz_image.jpg' %}" alt="Quiz Image" class="img-fluid quiz-image">
+                </div>
+            </section>
         </div>
-      </nav>
 
-    <br>
-    {% if enrolled_quizzes %}
-    <div class="container-xl">
-        <section>
-            <h4>Enrolled Quizzes</h4>
-            <p>Here are the quizzes you have enrolled in:</p>
-            <table class="table table-striped">
-                <thead>
-                    <tr>
-                        <th>Quiz Name</th>
-                        <th>Course</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for quiz in enrolled_quizzes %}
-                        <tr>
-                            <td>{{ quiz.name }}</td>
-                            <td>{{ quiz.course.name }}</td>
-                        </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </section>
-    </div>
+        <br><br><br>
+
     {% else %}
-    <div class="container-xl">
-        <section>
-            <h4>Participate in a course! (To unlock quizzes)</h4>
-            <p>You are not enrolled in any quiz. Please <a href="{% url 'student_courses' %}">enroll in a course</a> to participate in a quiz.</p>
-        </section>
-    </div>
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
     {% endif %}
-    <br>
-
-    {% if enrolled_quizzes %}
-    <div class="container-xl">
-      <section>
-        <h4>Start Communication</h4>
-        <p>Here are the links to participate in the different quizzes:</p>
-        <table class="table table-striped">
-          <thead>
-            <tr>
-              <th>Quiz Name</th>
-              <th>Link</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for quiz in enrolled_quizzes %}
-            <tr>
-              <td>{{ quiz.name }}</td>
-              <td>
-                <a href="{% url 'chat_with_quiz' quiz.id %}" target="_blank" class="btn btn-warning">Quiz</a>
-            </td>
-            </tr>
-          {% endfor %}
-          </tbody>
-        </table>
-      </section>
-    </div>
-{% endif %}
-  
-
-<br>
-
-<div class="container-xl">
-  <section>
-      <div class="d-flex justify-content-center">
-          {% load static %}
-          <img src="{% static 'images/quiz_image.jpg' %}" alt="Quiz Image" class="img-fluid quiz-image">
-      </div>
-  </section>
-</div>
-
-<br>
-<br>
-<br>
-  
-
 {% else %}
     <h1>Access Denied</h1>
-    <p>You are not authorized to view this page. Please <a href="{% url 'home' %}">go back</a> to home.</p>
-{% endif %}
-{% else %}
-<h1>Access Denied</h1>
-<p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
+    <p>You are not authorized to view this page. Please <a href="{% url 'login' %}">log in</a> to view this page.</p>
 {% endif %}
 
 {% endblock %}

@@ -1,92 +1,163 @@
 {% extends "app/base.html" %}
 
 {% block title %}
-Teacher Courses
+Teacher PDF Upload
 {% endblock %}
 
 {% block content %}
-    {% if user.is_authenticated %}
-        {% if user.profile.role == 'teacher' %}
-            <nav class="navbar navbar-expand-lg bg-body-tertiary">
-                <div class="container-fluid">
-                    <a class="navbar-brand" href="/">SmartMentor</a>
-                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-                        <span class="navbar-toggler-icon"></span>
-                    </button>
-                    <div class="collapse navbar-collapse" id="navbarSupportedContent">
-                        <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFS</a>
-                            </li>
-                              <li class="nav-item">
-                                  <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
-                              </li>
-                            <li class="nav-item">
-                                <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                                    {% csrf_token %}
-                                    <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-                                </form>
-                            </li>
-                        </ul>
-                    </div>
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+    .navbar-brand {
+        font-weight: bold;
+    }
+    .profile-container {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 40px 0;
+    }
+    .profile-text {
+        flex: 1;
+        padding-right: 40px;
+        border-right: 1px solid #ddd;
+    }
+    .profile-image {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding-left: 40px;
+    }
+    .teacher_pdf-image {
+        max-width: 270px;
+        max-height: 270px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 0 auto; /* Center the image */
+        display: block; /* Center the image */
+    }
+    .section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .section h4 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .btn-danger {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    .image-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px 0;
+    }
+</style>
+
+{% if user.is_authenticated %}
+    {% if user.profile.role == 'teacher' %}
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">SmartMentor</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
                 </div>
-            </nav>
-            
-            <br />
-            <div class="container-xl">
-                <section>
-                    <h4>Upload PDF for creation of a course:</h4>
-                    <form method="post" action="{% url 'teacher_pdfs' %}" enctype="multipart/form-data">
-                        {% csrf_token %}
-                        <label for="file">Choose a PDF file:</label>
-                        <br>
-                        <br>
-                        <input type="file" id="file" name="file" accept="application/pdf">
-                        <br>
-                        <br>
-                        <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
-                    </form>
-                </section>
             </div>
-            <br />
-            <div class="container-xl">
-                <section>
-                    <h4>PDF List:</h4>
-                    {% if user.profile.teacher.pdfs.all %}
-                        <table class="table">
-                            <thead>
+        </nav>
+        
+        <br />
+        <div class="container-xl">
+            <section class="section">
+                <h4>Create new courses by uploading a PDF:</h4>
+                <form method="post" action="{% url 'teacher_pdfs' %}" enctype="multipart/form-data">
+                    {% csrf_token %}
+                    <label for="file">Choose a PDF file:</label>
+                    <br><br>
+                    <input type="file" id="file" name="file" accept="application/pdf" class="form-control">
+                    <br><br>
+                    <button type="submit" class="btn btn-primary btn-lg btn-block">Upload</button>
+                </form>
+            </section>
+        </div>
+        <br />
+        <div class="container-xl">
+            <section class="section">
+                <h4>PDF List:</h4>
+                {% if user.profile.teacher.pdfs.all %}
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>File Name</th>
+                                <th>Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for pdf in user.profile.teacher.pdfs.all %}
                                 <tr>
-                                    <th>File Name</th>
-                                    <th>Action</th>
+                                    <td>{{ pdf.file.name }}</td>
+                                    <td>
+                                        <form method="post" action="{% url 'delete_pdf' pdf.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                                        </form>
+                                    </td>
                                 </tr>
-                            </thead>
-                            <tbody>
-                                {% for pdf in user.profile.teacher.pdfs.all %}
-                                    <tr>
-                                        <td>{{ pdf.file.name }}</td>
-                                        <td>
-                                            <form method="post" action="{% url 'delete_pdf' pdf.id %}">
-                                                {% csrf_token %}
-                                                <button type="submit" class="btn btn-danger btn-sm">Delete</button>
-                                            </form>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    {% else %}
-                        <p>No PDFs uploaded yet!</p>
-                    {% endif %}
-                </section>
-            </div>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                {% else %}
+                    <p>No PDFs uploaded yet!</p>
+                {% endif %}
+            </section>
+        </div>
+        <br />
+        <div class="container-xl">
+            <section class="image-container">
+                {% load static %}
+                <img src="{% static 'images/teacher_pdf_image.jpg' %}" alt="Teacher PDF Upload" class="teacher_pdf-image">
+            </section>
+        </div>
 
-
-        {% else %}
-            <h1>Access Denied</h1>
-            <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
-        {% endif %}
+        <br>
+        <br>
+        <br>
+    {% else %}
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
     {% endif %}
+{% else %}
+    <h1>Access Denied</h1>
+    <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
+{% endif %}
 {% endblock %}

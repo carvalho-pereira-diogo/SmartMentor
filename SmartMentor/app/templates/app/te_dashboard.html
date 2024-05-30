@@ -4,68 +4,114 @@ Teacher Dashboard
 {% endblock %}
 
 {% block content %}
+<style>
+    body {
+        font-family: 'Arial', sans-serif;
+    }
+    .navbar-brand {
+        font-weight: bold;
+    }
+    .section {
+        margin-bottom: 20px;
+        padding: 20px;
+        background: #f9f9f9;
+        border: 1px solid #ddd;
+        border-radius: 8px;
+    }
+    .section h2 {
+        border-bottom: 2px solid #007bff;
+        padding-bottom: 5px;
+        margin-bottom: 15px;
+        color: #007bff;
+    }
+    .section h3 {
+        color: #007bff;
+    }
+    .btn-primary {
+        background-color: #007bff;
+        border-color: #007bff;
+    }
+    .btn-primary:hover {
+        background-color: #0056b3;
+        border-color: #0056b3;
+    }
+    .teacher_dashboard-image {
+        max-width: 270px;
+        max-height: 270px;
+        border-radius: 8px;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        margin: 20px auto;
+        display: block;
+    }
+</style>
+
 {% if user.is_authenticated %}
-{% if user.profile.role == 'teacher' %}
-<nav class="navbar navbar-expand-lg bg-body-tertiary">
-    <div class="container-fluid">
-      <a class="navbar-brand" href="/">SmartMentor</a>
-      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
-        <span class="navbar-toggler-icon"></span>
-      </button>
-        <div class="collapse navbar-collapse" id="navbarSupportedContent">
-          <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-              <li class="nav-item">
-                  <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
-              </li>
-              <li class="nav-item">
-                <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFS</a>
-              </li>
-              <li class="nav-item">
-                  <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
-              </li>
-              <li class="nav-item">
-                  <form action="{% url 'logout' %}" method="post" style="margin: 0">
-                      {% csrf_token %}
-                      <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
-                  </form>
-              </li>
-          </ul>
-      </div>
-    </div>
-  </nav>
+    {% if user.profile.role == 'teacher' %}
+        <nav class="navbar navbar-expand-lg bg-body-tertiary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/">SmartMentor</a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarSupportedContent" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarSupportedContent">
+                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_profile' %}">Profile</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_pdfs' %}">PDFs</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_courses' %}">Courses</a>
+                        </li>
+                        <li class="nav-item">
+                            <form action="{% url 'logout' %}" method="post" style="margin: 0">
+                                {% csrf_token %}
+                                <button type="submit" class="nav-link" style="background: none; border: none; cursor: pointer;">Sign out</button>
+                            </form>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
 
-</br>
-</br>
-</br>
-<div class="container-xl">
-    <section>
-        <h2>Welcome to SmartMentor: Your Gateway to Engaging Education</h2>
-        <p>At SmartMentor, education transcends traditional boundaries, facilitated by our dedicated teachers who are the architects of your learning experience. With an emphasis on creating a dynamic and interactive environment, our teachers craft courses, mentor learners, and develop educational games that make learning not just informative, but also captivating.</p>
+        <br>
 
-        <h3>Meet the SmartMentor Educators:</h3>
-        <p>SmartMentor's educators are more than just teachers; they are innovators in the educational sphere. They play a pivotal role in nurturing and guiding students through their educational journey:</p>
-        <ul>
-            <li><strong>Course Creators:</strong> Our teachers design comprehensive courses that are both engaging and challenging, ensuring that each lesson is a stepping stone to greater knowledge and understanding.</li>
-            <li><strong>Personal Tutors:</strong> As tutors, they provide personalized attention, supporting learners' unique educational needs with patience and insight.</li>
-            <li><strong>Game Developers:</strong> By integrating gamified learning, our educators make education fun, developing games that reinforce concepts and skills in an interactive and enjoyable way.</li>
-        </ul>
+        <div class="container-xl">
+            <section class="section">
+                <h2>Welcome to SmartMentor: Your Gateway to Engaging Education</h2>
+                <p>At SmartMentor, education transcends traditional boundaries, facilitated by our dedicated teachers who are the architects of your learning experience. With an emphasis on creating a dynamic and interactive environment, our teachers upload PDFs to create courses, automatically generating quizzes and exams to ensure a comprehensive learning experience. Our approach makes learning not just informative, but also captivating.</p>
+                
+                <h3>Meet the SmartMentor Educators:</h3>
+                <p>SmartMentor's educators are more than just teachers; they are innovators in the educational sphere. They play a pivotal role in nurturing and guiding students through their educational journey:</p>
+                <ul>
+                    <li><strong>PDF Uploaders:</strong> Our teachers upload PDFs that serve as the foundation for comprehensive courses, ensuring each lesson is a stepping stone to greater knowledge and understanding.</li>
+                    <li><strong>Course Creators:</strong> From the uploaded PDFs, our educators create engaging courses. Quizzes and exams are automatically generated, making the learning process seamless and efficient.</li>
+                    <li><strong>Information Introducers:</strong> Our educators introduce the key information to be learned, ensuring that students grasp essential concepts and skills effectively.</li>
+                </ul>
+                
+                <p>Join SmartMentor to experience an education that is curated by experts who believe in the power of personalized learning. Our teachers are not just imparting knowledge; they are inspiring change and fostering a lifelong passion for learning. Discover the SmartMentor difference, where education is a journey of continuous discovery, led by those who know it best.</p>
+            </section>
+        </div>
 
-        <p>Join SmartMentor to experience an education that is curated by experts who believe in the power of personalized learning. Our teachers are not just imparting knowledge; they are inspiring change and fostering a lifelong passion for learning. Discover the SmartMentor difference, where education is a journey of continuous discovery, led by those who know it best.</p>
-    </section>
-</div>
+        <div class="container-xl">
+            <section>
+                <div class="d-flex justify-content-center">
+                    {% load static %}
+                    <img src="{% static 'images/teacher_dashboard_image.jpg' %}" alt="Teacher Dashboard Image" class="img-fluid teacher_dashboard-image">
+                </div>
+            </section>
+        </div>
 
-</br>
-</br>
-</br>
+        <br><br><br>
 
+    {% else %}
+        <h1>Access Denied</h1>
+        <p>You are not authorized to view this page. Please <a href="/">go back</a> to home.</p>
+    {% endif %}
 {% else %}
     <h1>Access Denied</h1>
-    <p>You are not authorized to view this page. Please <a href="/">back</a> to home.</p>
+    <p>You are not authorized to view this page. Please <a href="/signin">log in</a> to view this page.</p>
 {% endif %}
-{% else %}
-    <h1>Access Denied</h1>
-    <p>You are not authorized to view this page. Please <a href="/signin">login</a> to view this page.</p>
-{% endif %}
-
 
 {% endblock %}

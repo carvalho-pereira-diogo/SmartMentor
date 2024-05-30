@@ -248,7 +248,7 @@ class TeacherCourseView(LoginRequiredMixin, ListView):
                     course.pdfs.add(pdf)
 
                 # Create a quiz for the course
-                quiz = Quiz(course=course, name="Digital Quiz Agent for " + course.name, teacher=request.user.teacher)
+                quiz = Quiz(course=course, name="Digital Quiz for " + course.name, teacher=request.user.teacher)
                 quiz.save()
 
                 # Add the quiz to the teacher's quizzes list

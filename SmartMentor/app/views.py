@@ -586,6 +586,10 @@ def quiz_view(request, quiz_id):
     if not chunks:
         return JsonResponse({"error": "No text could be extracted from the PDF."}, status=404)
     
+    # student information
+    student_info = get_student_info(request)
+    
+    
     # Get the last message
     if request.method == 'POST':
         # Get the message from the request
@@ -598,7 +602,7 @@ def quiz_view(request, quiz_id):
 
         # Check if message is question, and prompt it
         if message == "question":
-            prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file. Do not ask question about chapters, versions, sections and code snippets."
+            prompt_text = f"You are a question maker, provide a question with 4 options a,b,c and d, where one is correct,Based on the chunks, formulate a question based with the content, make it not to complicated it should be coding related:\n\n{random_chunks[0]} Example: What is the default behavior of logging messages in Python? a) All types of messages are displayed and sent to standard error. b) Only debugging messages are suppressed and the output is sent to standard error. c) Only informational and debugging messages are suppressed and the output is sent to standard error. d) No messages are suppressed and all messages are sent to a file. Do not ask question about chapters, versions, sections and code snippets. Based on user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']} provide a question that is related to the content."
         # Check if message is a, b, c, or d, and prompt it
         elif message == "a":
             # Check last response and correct it
@@ -622,10 +626,11 @@ def quiz_view(request, quiz_id):
         
         else :
             # Check if the message is not a, b, c, d, or question and prompt it
-            prompt_text = f"You should tell the student that he can only reply with 'question' or 'a', 'b', 'c', 'd', Do not provide information that is not about the topic in the , this means you should not provide information that is not in the text: {random_chunks[0]}. DO NOT EXPLAIN QUESTIONS THAT ARE NOT RELATED."
+            prompt_text = f"You should answer the question of the student with your knowledge. Do not provide information that is not about the topics in the text: {random_chunks[0]}. DO NOT EXPLAIN QUESTIONS THAT ARE NOT RELATED. Be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}. PLEASE ONLY TALK ABOUT THE TOPICS THAT ARE IN RELATION TO THE TEXT."
             
         # Check if message is a, b, c, or d, and start the chat        
         if message == "a" or message == "b" or message == "c" or message == "d":
+            # Create a system prompt
             system_prompt = {
                 "role": "system", 
                 "content": prompt_text
@@ -635,7 +640,7 @@ def quiz_view(request, quiz_id):
             user_prompt = {"role": "user", "content": message}
 
             # Create a chat completion
-            chat_completion = clientCourse.chat.completions.create(
+            chat_completion = clientQuiz.chat.completions.create(
                 model="gpt-4",
                 messages=[system_prompt, user_prompt],
                 max_tokens=250,
@@ -649,6 +654,7 @@ def quiz_view(request, quiz_id):
         
         # Check if message is question, and start the chat
         if message == "question":
+            # Create a system prompt
             system_prompt = {
                 "role": "system", 
                 "content": prompt_text
@@ -671,7 +677,29 @@ def quiz_view(request, quiz_id):
                 response = response.replace(option, '<br>' + option)
             # Add the response to the memory
             add_response_to_memory_quiz(response, request.user.id)
-        
+            
+        # Check if message is not question, a, b, c, or d, and start the chat
+        if message != "question" and message != "a" and message != "b" and message != "c" and message != "d":
+            # Create a system prompt
+            system_prompt = {
+                "role": "system", 
+                "content": prompt_text
+            }
+            
+            # get the user prompt
+            user_prompt = {"role": "user", "content": message}
+            
+            # Create a chat completion
+            chat_completion = clientQuiz.chat.completions.create(
+                model="gpt-4",
+                messages=[system_prompt, user_prompt],
+                max_tokens=250,
+                top_p=0.9
+            )
+            
+            # Get the response
+            response = chat_completion.choices[0].message.content.strip()
+                
         return JsonResponse({'message': message, 'response': response})
 
     return render(request, 'app/chat_with_quiz.html', {'quiz': quiz})
@@ -687,6 +715,9 @@ def course_view(request, course_id):
     course = get_object_or_404(Course, pk=course_id)
     # Get the PDF files associated with the course
     pdf_files = course.pdfs.all()
+    
+    #get level of student
+    student_info = get_student_info(request)
 
     # Check if there are no PDF files
     if not pdf_files:
@@ -722,7 +753,8 @@ def course_view(request, course_id):
         }
     # Get the session data
     session_data = request.session['course_interaction']
-
+    # Get the current chunk index
+    current_chunk_index = session_data.get('current_chunk_index', 0)
 
     # Check if the request method is POST
     if request.method == 'POST':
@@ -734,12 +766,13 @@ def course_view(request, course_id):
         current_chunk = chunks[current_chunk_index] if chunks else "No content available."
 
         # prompt_text helps to prompt the text
-        prompt_text = f"You are a friendly student assistant which helps student out in their learning journey, answer the question based on the input of student: {message}\n\n an the text:{current_chunk}, EVERYTHING ELSE IS NOT ALLOWED."
+        prompt_text = f"You are a friendly student assistant which helps student out in their learning journey, answer the question based on the input of student: {message}\n\n an the text:{current_chunk}, EVERYTHING ELSE IS NOT ALLOWED. Please be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}. Do not ask question about chapters, versions, sections and code snippets."
 
         # Check if message is start, and prompt it
         if message == "start":
             # Reset the current chunk index
-            session_data['current_chunk_index'] = 0
+            current_chunk = chunks[session_data['current_chunk_index']]
+            print(f"Current chunk: {current_chunk}")
             # Reset the detail level
             session_data['detail_level'] = 1
             # Reset the last response
@@ -747,7 +780,7 @@ def course_view(request, course_id):
             # Modify the session
             request.session.modified = True
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets. Be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}."
         # Check if message is next, and prompt it
         elif message == "next":
             # Check if the current chunk index is less than the total chunks
@@ -758,8 +791,9 @@ def course_view(request, course_id):
                 request.session.modified = True 
             # Get the current chunk
             current_chunk = chunks[session_data['current_chunk_index']]
+            print(f"Current chunk: {current_chunk}")
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets. Be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}."
         # Check if message is prev, and prompt it
         elif message == "prev":
             # Check if the current chunk index is greater than 0
@@ -771,7 +805,7 @@ def course_view(request, course_id):
             # Get the current chunk
             current_chunk = chunks[session_data['current_chunk_index']]
             # prompt_text helps to prompt the text
-            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets."
+            prompt_text = f"Please summarize this content:\n\n{current_chunk}. Do not ask question about chapters, versions, sections and code snippets. Be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}."
             
         # Check if message is detail, and prompt it
         system_prompt = {
@@ -865,10 +899,14 @@ def exam_view(request, course_id):
 
     # Select a random chunk
     selected_chunk = random.choice(chunks)
+    
+    # get level of student
+    student_info = get_student_info(request)
 
     # Prompt the user to generate questions
     prompt_text = f"""
     You are an exam assistant. You need to analyze the text provided and generate 10 multiple-choice questions based on the content. Each question should have four options labeled A, B, C, and D, with only one correct answer. Format the output as a list of Python dictionaries. Do not ask question about chapters, versions, sections and code snippets.
+    Be careful about user information: {student_info['username']}, {student_info['fname']} {student_info['lname']}, {student_info['email']}, {student_info['role']}, {student_info['level']}.
 
     Text: "{selected_chunk}"
 

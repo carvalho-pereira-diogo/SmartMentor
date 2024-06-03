@@ -42,6 +42,7 @@ class Student(models.Model):
     scores = models.ManyToManyField(Score, related_name='students')
     courses = models.ManyToManyField('Course', related_name='enrolled_students')
     quizzes = models.ManyToManyField('Quiz', related_name='enrolled_students')
+    level = models.CharField(max_length=20, default='beginner')
     def __str__(self):
         return self.profile.username
     

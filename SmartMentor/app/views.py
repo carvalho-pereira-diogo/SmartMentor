@@ -1030,6 +1030,8 @@ def display_scores(request, course_id):
         level = 'To be determined'
         average = 'N/A'
     else:
+        student = Student.objects.get(user=request.user)
+        
         # Get the last 10 scores
         last_scores = scores.order_by('-id')[:10]
 
@@ -1046,6 +1048,11 @@ def display_scores(request, course_id):
             level = 'Intermediate'
         elif 90 <= average <= 100:
             level = 'Advanced'
+            
+        student.level = level
+        student.save()
+            
+        
 
     # Render the scores page
     return render(request, 'app/exam_scores.html', {'course': course, 'scores': scores, 'level': level, 'average': average, 'teacher_email': teacher_email})

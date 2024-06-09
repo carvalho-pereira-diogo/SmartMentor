@@ -1044,12 +1044,14 @@ def display_scores(request, course_id):
         # Determine the level based on the average
         if 0 <= average <= 74:
             level = 'Beginner'
+            student.level = level
         elif 75 <= average <= 89:
             level = 'Intermediate'
+            student.level = level
         elif 90 <= average <= 100:
             level = 'Advanced'
+            student.level = level
             
-        student.level = level
         student.save()
             
         
